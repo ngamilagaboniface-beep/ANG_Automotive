@@ -1,0 +1,15 @@
+{
+  "short_name": "ANG",
+  "name": "ANG Performance Automotive",
+  "icons": [
+    {
+      "src": "/static/logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#000000",
+  "display": "standalone",
+  "theme_color": "#f97316"
+}
