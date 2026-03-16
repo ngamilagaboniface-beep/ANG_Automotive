@@ -1,17 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Authorization | ANG Automotive</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <title>ANG Login</title>
+    <style>
+        body {
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        input:focus {
+            box-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
+        }
+    </style>
 </head>
-<body class="bg-slate-900 h-screen flex items-center justify-center">
-    <div class="bg-white p-10 rounded-3xl shadow-2xl w-96 text-center">
-        <h1 class="text-3xl font-black italic text-slate-800 mb-2">ANG</h1>
-        <p class="text-orange-500 font-bold text-xs uppercase mb-8">Admin Access</p>
-        <form action="/login" method="POST" class="space-y-4">
-            <input type="password" name="password" placeholder="Password" class="w-full border p-3 rounded-xl focus:ring-2 ring-orange-500 outline-none">
-            <button class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-orange-500 transition">Enter</button>
+<body class="flex items-center justify-center min-h-screen text-white px-4">
+
+    <div class="glass-panel w-full max-w-md p-10 rounded-3xl">
+        <div class="text-center mb-10">
+            <h1 class="text-5xl font-black italic tracking-tighter text-orange-500 mb-2">ANG</h1>
+            <p class="text-[10px] uppercase tracking-[0.4em] text-gray-500 font-bold">Encrypted Admin Access</p>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="bg-red-500/10 border border-red-500/50 text-red-400 text-xs p-4 rounded-xl mb-6 text-center animate-pulse">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form action="/login" method="POST" class="space-y-6">
+            
+            <div>
+                <label class="block text-[10px] font-black uppercase text-gray-400 mb-2 ml-1 tracking-widest">Operator Username</label>
+                <input type="text" 
+                       name="username" 
+                       placeholder="Enter Username"
+                       required 
+                       class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl py-4 px-5 focus:outline-none focus:border-orange-500 transition-all text-white placeholder-zinc-700">
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-black uppercase text-gray-400 mb-2 ml-1 tracking-widest">Security Password</label>
+                <input type="password" 
+                       name="password" 
+                       placeholder="••••••••"
+                       required 
+                       class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl py-4 px-5 focus:outline-none focus:border-orange-500 transition-all text-white placeholder-zinc-700">
+            </div>
+
+            <button type="submit" 
+                class="w-full bg-orange-600 hover:bg-orange-500 text-white font-black py-4 rounded-xl uppercase tracking-[0.2em] text-sm transition-all transform hover:scale-[1.01] active:scale-95 shadow-xl shadow-orange-900/20">
+                Initialize Login
+            </button>
         </form>
+
+        <div class="mt-10 text-center">
+            <a href="/" class="text-gray-600 hover:text-orange-500 text-[10px] uppercase tracking-widest transition-colors">
+                &larr; Back to Showroom
+            </a>
+        </div>
     </div>
+
+    <div class="fixed bottom-6 text-[10px] text-gray-700 uppercase tracking-widest">
+        &copy; 2026 ANG Performance Engineering
+    </div>
+
 </body>
 </html>
