@@ -1,23 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo512.png') }}">
-    
-    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    
-    <meta name="theme-color" content="#f97316"> </head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ANG Performance | Showroom</title>
+    
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo512.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#f97316">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        #splash { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.8s; }
+        .hide-splash { opacity: 0; pointer-events: none; }
         .tab-active { color: #f97316; border-bottom: 3px solid #f97316; }
         .hidden { display: none; }
     </style>
 </head>
-<body class="bg-black text-white">
+<body class="bg-black text-white font-sans">
+
+    <div id="splash">
+        <h1 class="text-6xl font-black italic text-orange-500 animate-pulse">ANG</h1>
+        <div class="w-48 h-1 bg-zinc-800 mt-4 overflow-hidden"><div class="h-full bg-orange-500 w-full animate-[load_2s_ease-in-out]"></div></div>
+    </div>
 
     <header class="py-10 border-b border-zinc-900 text-center">
         <h1 class="text-6xl font-black italic text-orange-500">ANG</h1>
@@ -51,10 +57,10 @@
             <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800">
                 <img src="{{ part.image_url }}" class="w-full h-40 object-cover rounded-xl mb-4">
                 <span class="text-[10px] text-orange-500 font-bold uppercase">{{ part.category }}</span>
-                <h4 class="font-bold text-lg">{{ part.name }}</h4>
-                <p class="text-white font-bold">{{ "{:,.0f}".format(part.price) }} TZS</p>
+                <h4 class="font-bold text-lg leading-tight mb-2">{{ part.name }}</h4>
+                <p class="text-white font-black">{{ "{:,.0f}".format(part.price) }} TZS</p>
                 <form action="/checkout/part/{{ part.id }}" method="POST" class="mt-4">
-                    <input type="text" name="customer_name" placeholder="Your Name" required class="w-full bg-black border border-zinc-700 p-2 rounded-lg text-xs mb-2">
+                    <input type="text" name="customer_name" placeholder="Name" required class="w-full bg-black border border-zinc-700 p-2 rounded-lg text-xs mb-2">
                     <button class="w-full bg-orange-600 py-2 rounded-lg text-xs font-bold">BUY NOW</button>
                 </form>
             </div>
@@ -69,6 +75,7 @@
             document.getElementById('btn-cars').className = type === 'cars' ? 'tab-active pb-2' : 'pb-2';
             document.getElementById('btn-parts').className = type === 'parts' ? 'tab-active pb-2' : 'pb-2';
         }
+        window.addEventListener('load', () => setTimeout(() => document.getElementById('splash').classList.add('hide-splash'), 2500));
     </script>
 </body>
 </html>
