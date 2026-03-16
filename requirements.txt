@@ -1,0 +1,5 @@
+Flask>=2.3
+Flask-SQLAlchemy>=3.0
+Flask-Login>=0.6
+fpdf>=1.7
+werkzeug>=3.0

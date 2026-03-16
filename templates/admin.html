@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>ANG Admin</title>
+</head>
+<body class="bg-gray-100 flex min-h-screen">
+    <div class="w-72 bg-slate-900 text-white p-8">
+        <h2 class="text-2xl font-black text-orange-500 mb-10 italic">ANG ADMIN</h2>
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+            <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">Lifetime Revenue</p>
+            <p class="text-2xl font-black text-orange-400">{{ "{:,}".format(total_rev) }} <span class="text-xs">TZS</span></p>
+        </div>
+        <a href="/" class="block mt-10 text-gray-400 hover:text-white font-bold">← View Storefront</a>
+    </div>
+
+    <main class="flex-1 p-10">
+        <h1 class="text-3xl font-bold mb-8 text-slate-800">Operational Dashboard</h1>
+
+        <div class="bg-white shadow-xl rounded-2xl overflow-hidden mb-12">
+            <div class="bg-slate-50 px-6 py-4 border-b"><h3 class="font-bold">Recent Customer Orders</h3></div>
+            <table class="w-full text-left">
+                <thead class="text-xs text-gray-400 uppercase">
+                    <tr><th class="p-6">Customer</th><th class="p-6">Product Ordered</th><th class="p-6">Date</th></tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr class="border-b hover:bg-slate-50 transition">
+                        <td class="p-6 font-bold">{{ order.customer_name }} <br><span class="text-sm font-normal text-orange-600">{{ order.phone }}</span></td>
+                        <td class="p-6 font-semibold">{{ order.product.name }}</td>
+                        <td class="p-6 text-xs text-gray-400">{{ order.date_ordered.strftime('%d %b, %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-10">
+            <div class="bg-white p-8 rounded-2xl shadow-xl border-t-4 border-orange-500">
+                <h3 class="text-xl font-bold mb-6">Add New Listing</h3>
+                <form action="/admin/add" method="POST" enctype="multipart/form-data" class="space-y-4">
+                    <input type="text" name="name" placeholder="Item Name" class="w-full border p-3 rounded-xl" required>
+                    <div class="flex gap-4">
+                        <select name="type" class="w-1/2 border p-3 rounded-xl"><option value="Car">Car</option><option value="Part">Part</option></select>
+                        <input type="number" name="price" placeholder="Price (TZS)" class="w-1/2 border p-3 rounded-xl" required>
+                    </div>
+                    <div class="p-4 border-2 border-dashed rounded-xl text-center bg-gray-50">
+                        <p class="text-xs font-bold text-gray-500 mb-2 uppercase">Product Photo</p>
+                        <input type="file" name="image_file" accept="image/*" class="text-xs">
+                    </div>
+                    <textarea name="desc" placeholder="Specifications..." class="w-full border p-3 rounded-xl h-24"></textarea>
+                    <button class="w-full bg-orange-500 text-white py-4 rounded-xl font-black hover:bg-orange-600 shadow-lg">LIST PRODUCT</button>
+                </form>
+            </div>
+
+            <div class="bg-white p-8 rounded-2xl shadow-xl h-[600px] overflow-y-auto">
+                <h3 class="text-xl font-bold mb-6">Active Inventory</h3>
+                {% for item in products %}
+                <div class="flex justify-between items-center p-4 border rounded-xl mb-3 hover:border-orange-200">
+                    <div class="flex items-center gap-4">
+                        <img src="{{ url_for('static', filename='uploads/' + item.image_file) }}" class="w-12 h-12 object-cover rounded-lg">
+                        <div><p class="font-bold text-sm">{{ item.name }}</p><p class="text-xs text-orange-500 font-bold">{{ "{:,}".format(item.price) }} TZS</p></div>
+                    </div>
+                    <form action="{{ url_for('delete_item', product_id=item.id) }}" method="POST" onsubmit="return confirm('Sold out? Delete item?');">
+                        <button class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+</body>
+</html>
