@@ -1,26 +1,29 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from datetime import datetime
 import cloudinary
 import cloudinary.uploader
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'ANG_SECURE_2026')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'ANG_PRO_2026_SECURE')
 
-# Cloudinary Setup (Get these from cloudinary.com - it's free)
+# Cloudinary Configuration
 cloudinary.config(
   cloud_name = os.environ.get('CLOUDINARY_NAME'),
   api_key = os.environ.get('CLOUDINARY_API_KEY'),
   api_secret = os.environ.get('CLOUDINARY_API_SECRET')
 )
 
-# Database
+# Database Setup
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'ang_auto.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
+login_manager.login_view = 'login'
 
 # --- MODELS ---
 class User(UserMixin, db.Model):
@@ -45,6 +48,7 @@ class Part(db.Model):
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_name = db.Column(db.String(100))
+    customer_phone = db.Column(db.String(20))
     item_name = db.Column(db.String(100))
     total_price = db.Column(db.Float)
     date_ordered = db.Column(db.DateTime, default=datetime.utcnow)
@@ -61,15 +65,14 @@ with app.app_context():
 # --- ROUTES ---
 @app.route('/')
 def index():
-    cars = Car.query.all()
-    parts = Part.query.all()
-    return render_template('index.html', cars=cars, parts=parts)
+    return render_template('index.html', cars=Car.query.all(), parts=Part.query.all())
 
 @app.route('/checkout/<type>/<int:id>', methods=['POST'])
 def checkout(type, id):
     item = Car.query.get(id) if type == 'car' else Part.query.get(id)
     new_order = Order(
         customer_name=request.form.get('customer_name'),
+        customer_phone=request.form.get('customer_phone'),
         item_name=item.model if type == 'car' else item.name,
         total_price=item.price
     )
@@ -77,18 +80,11 @@ def checkout(type, id):
     db.session.commit()
     return render_template('billing.html', order=new_order)
 
-@app.route('/admin')
-@login_required
-def admin_dashboard():
-    return render_template('admin.html', cars=Car.query.all(), parts=Part.query.all(), orders=Order.query.all())
-
 @app.route('/upload', methods=['POST'])
 @login_required
-def upload_item():
+def upload():
     file = request.files['file']
-    item_type = request.form.get('type') # 'car' or 'part'
-    
-    # Upload to Cloudinary
+    item_type = request.form.get('type')
     upload_result = cloudinary.uploader.upload(file)
     img_url = upload_result['secure_url']
     
@@ -101,6 +97,11 @@ def upload_item():
     db.session.commit()
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/admin')
+@login_required
+def admin_dashboard():
+    return render_template('admin.html', orders=Order.query.order_by(Order.date_ordered.desc()).all())
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -109,6 +110,11 @@ def login():
             login_user(user)
             return redirect(url_for('admin_dashboard'))
     return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True)
