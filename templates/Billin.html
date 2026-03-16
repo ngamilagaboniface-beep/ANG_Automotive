@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANG Performance | Spare Parts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #splash { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.8s; }
+        .hide-splash { opacity: 0; pointer-events: none; }
+    </style>
+</head>
+<body class="bg-black text-white font-sans">
+
+    <div id="splash">
+        <h1 class="text-6xl font-black italic text-orange-500 animate-pulse">ANG</h1>
+        <div class="w-48 h-1 bg-zinc-800 mt-4 overflow-hidden">
+            <div class="h-full bg-orange-500 w-full animate-[load_2s_ease-in-out]"></div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-6 py-12">
+        <header class="flex justify-between items-center mb-16">
+            <div>
+                <h2 class="text-4xl font-black italic tracking-tighter">ANG <span class="text-orange-500">PARTS</span></h2>
+                <p class="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Direct Engineering Solutions</p>
+            </div>
+            <a href="/login" class="text-zinc-600 hover:text-white text-xs uppercase">Admin</a>
+        </header>
+
+        <div class="flex gap-4 mb-10 overflow-x-auto pb-4 no-scrollbar">
+            <button class="bg-orange-600 px-6 py-2 rounded-full text-xs font-bold uppercase">All Parts</button>
+            {% for cat in categories %}
+            <button class="bg-zinc-900 border border-zinc-800 px-6 py-2 rounded-full text-xs font-bold uppercase hover:border-orange-500 transition">{{ cat }}</button>
+            {% endfor %}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            {% for part in parts %}
+            <div class="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-5 hover:scale-[1.02] transition-transform">
+                <img src="{{ part.image_url or 'https://via.placeholder.com/400' }}" class="w-full h-48 object-cover rounded-2xl mb-4">
+                <span class="text-[10px] font-bold text-orange-500 uppercase tracking-widest">{{ part.category }}</span>
+                <h3 class="text-xl font-bold mt-1">{{ part.name }}</h3>
+                <p class="text-2xl font-black text-white mt-2">{{ "{:,.0f}".format(part.price) }} <span class="text-xs text-zinc-500">TZS</span></p>
+                
+                <form action="/checkout/{{ part.id }}" method="POST" class="mt-6 space-y-3">
+                    <input type="text" name="customer_name" placeholder="Your Full Name" required class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-xs focus:border-orange-500 outline-none">
+                    <input type="text" name="customer_phone" placeholder="Phone Number" required class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-xs focus:border-orange-500 outline-none">
+                    <button type="submit" class="w-full bg-white text-black font-black py-3 rounded-xl uppercase tracking-tighter text-xs hover:bg-orange-500 transition">Buy & Get Bill</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('load', () => {
+            setTimeout(() => document.getElementById('splash').classList.add('hide-splash'), 2500);
+        });
+    </script>
+</body>
+</html>
