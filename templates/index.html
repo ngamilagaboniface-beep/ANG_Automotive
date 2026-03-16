@@ -3,82 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ANG Automotive | Pure Performance</title>
+    <title>ANG Performance | Spare Parts</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Splash Screen styling */
-        #splash-screen {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: #000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.8s ease-in-out;
-        }
-        .loading-bar {
-            width: 200px;
-            height: 2px;
-            background: #333;
-            margin-top: 20px;
-            overflow: hidden;
-            position: relative;
-        }
-        .loading-progress {
-            width: 0%;
-            height: 100%;
-            background: #f97316; /* Orange-500 */
-            animation: load 2.5s forwards;
-        }
-        @keyframes load {
-            to { width: 100%; }
-        }
+        #splash { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.8s; }
+        .hide-splash { opacity: 0; pointer-events: none; }
     </style>
 </head>
-<body class="bg-black text-white">
+<body class="bg-black text-white font-sans">
 
-    <div id="splash-screen">
-        <h1 class="text-6xl font-black italic tracking-tighter text-orange-500">ANG</h1>
-        <p class="text-gray-400 tracking-[0.5em] uppercase text-xs mt-2">Automotive</p>
-        <div class="loading-bar">
-            <div class="loading-progress"></div>
+    <div id="splash">
+        <h1 class="text-6xl font-black italic text-orange-500 animate-pulse">ANG</h1>
+        <div class="w-48 h-1 bg-zinc-800 mt-4 overflow-hidden">
+            <div class="h-full bg-orange-500 w-full animate-[load_2s_ease-in-out]"></div>
         </div>
-        <p class="text-[10px] text-gray-600 mt-4 uppercase">Unleashing Adrenaline...</p>
     </div>
 
-    <div class="container mx-auto px-4 py-10">
-        <header class="flex justify-between items-center mb-12">
-            <h2 class="text-2xl font-bold tracking-tighter">ANG <span class="text-orange-500">SHOWROOM</span></h2>
-            <a href="/login" class="text-xs text-gray-500 hover:text-white">Admin Access</a>
+    <div class="container mx-auto px-6 py-12">
+        <header class="flex justify-between items-center mb-16">
+            <div>
+                <h2 class="text-4xl font-black italic tracking-tighter">ANG <span class="text-orange-500">PARTS</span></h2>
+                <p class="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Direct Engineering Solutions</p>
+            </div>
+            <a href="/login" class="text-zinc-600 hover:text-white text-xs uppercase">Admin</a>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {% for car in cars %}
-            <div class="bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800">
-                <img src="{{ car.image_url or 'https://via.placeholder.com/600x400?text=ANG+Automotive' }}" class="w-full h-48 object-cover">
-                <div class="p-6">
-                    <h3 class="text-xl font-bold">{{ car.model }}</h3>
-                    <p class="text-orange-500 font-bold mt-1">{{ car.price }}</p>
-                    <p class="text-gray-400 text-sm mt-3">{{ car.description }}</p>
-                    <button class="w-full mt-6 bg-white text-black font-bold py-2 rounded-lg hover:bg-orange-500 transition-colors">Inquire via WhatsApp</button>
-                </div>
+        <div class="flex gap-4 mb-10 overflow-x-auto pb-4 no-scrollbar">
+            <button class="bg-orange-600 px-6 py-2 rounded-full text-xs font-bold uppercase">All Parts</button>
+            {% for cat in categories %}
+            <button class="bg-zinc-900 border border-zinc-800 px-6 py-2 rounded-full text-xs font-bold uppercase hover:border-orange-500 transition">{{ cat }}</button>
+            {% endfor %}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            {% for part in parts %}
+            <div class="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-5 hover:scale-[1.02] transition-transform">
+                <img src="{{ part.image_url or 'https://via.placeholder.com/400' }}" class="w-full h-48 object-cover rounded-2xl mb-4">
+                <span class="text-[10px] font-bold text-orange-500 uppercase tracking-widest">{{ part.category }}</span>
+                <h3 class="text-xl font-bold mt-1">{{ part.name }}</h3>
+                <p class="text-2xl font-black text-white mt-2">{{ "{:,.0f}".format(part.price) }} <span class="text-xs text-zinc-500">TZS</span></p>
+                
+                <form action="/checkout/{{ part.id }}" method="POST" class="mt-6 space-y-3">
+                    <input type="text" name="customer_name" placeholder="Your Full Name" required class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-xs focus:border-orange-500 outline-none">
+                    <input type="text" name="customer_phone" placeholder="Phone Number" required class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-xs focus:border-orange-500 outline-none">
+                    <button type="submit" class="w-full bg-white text-black font-black py-3 rounded-xl uppercase tracking-tighter text-xs hover:bg-orange-500 transition">Buy & Get Bill</button>
+                </form>
             </div>
             {% endfor %}
         </div>
     </div>
 
     <script>
-        // Splash screen logic
         window.addEventListener('load', () => {
-            setTimeout(() => {
-                const splash = document.getElementById('splash-screen');
-                splash.style.opacity = '0';
-                setTimeout(() => {
-                    splash.style.display = 'none';
-                }, 800);
-            }, 3000); // 3 seconds delay
+            setTimeout(() => document.getElementById('splash').classList.add('hide-splash'), 2500);
         });
     </script>
 </body>
