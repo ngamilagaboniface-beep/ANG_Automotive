@@ -7,16 +7,16 @@ import cloudinary
 import cloudinary.uploader
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'ANG_PRO_2026_SECURE')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'ANG_ULTIMATE_2026_KEY')
 
-# Cloudinary Configuration
+# Cloudinary Config
 cloudinary.config(
   cloud_name = os.environ.get('CLOUDINARY_NAME'),
   api_key = os.environ.get('CLOUDINARY_API_KEY'),
   api_secret = os.environ.get('CLOUDINARY_API_SECRET')
 )
 
-# Database Setup
+# Database Config
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'ang_auto.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -73,7 +73,7 @@ def checkout(type, id):
     new_order = Order(
         customer_name=request.form.get('customer_name'),
         customer_phone=request.form.get('customer_phone'),
-        item_name=item.model if type == 'car' else item.name,
+        item_name=getattr(item, 'model', getattr(item, 'name', 'Unknown Item')),
         total_price=item.price
     )
     db.session.add(new_order)
@@ -97,11 +97,6 @@ def upload():
     db.session.commit()
     return redirect(url_for('admin_dashboard'))
 
-@app.route('/admin')
-@login_required
-def admin_dashboard():
-    return render_template('admin.html', orders=Order.query.order_by(Order.date_ordered.desc()).all())
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -110,6 +105,11 @@ def login():
             login_user(user)
             return redirect(url_for('admin_dashboard'))
     return render_template('login.html')
+
+@app.route('/admin')
+@login_required
+def admin_dashboard():
+    return render_template('admin.html', orders=Order.query.order_by(Order.date_ordered.desc()).all())
 
 @app.route('/logout')
 def logout():
