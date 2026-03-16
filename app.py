@@ -8,7 +8,7 @@ app = Flask(__name__)
 # --- CONFIGURATION ---
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'ANG_AUTO_2026_PRO_KEY')
 
-# Database path configuration (Fixed for Linux/Render)
+# Database setup
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'ang_auto.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -28,23 +28,22 @@ class Car(db.Model):
     model = db.Column(db.String(100), nullable=False)
     price = db.Column(db.String(50), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    image_url = db.Column(db.String(500), nullable=True) # For car photos
+    image_url = db.Column(db.String(500), nullable=True)
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# --- DATABASE AUTO-CREATION ---
+# Create database and admin user
 with app.app_context():
     db.create_all()
-    # Create default admin for first-time access
     if not User.query.filter_by(username='admin').first():
+        # Using simple password for now as requested
         admin_user = User(username='admin', password='ANG2026_Admin') 
         db.session.add(admin_user)
         db.session.commit()
 
 # --- ROUTES ---
-
 @app.route('/')
 def index():
     cars = Car.query.all()
@@ -53,11 +52,16 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        user = User.query.filter_by(username=request.form['username']).first()
-        if user and user.password == request.form['password']:
+        # FIX: Ensure these match the HTML 'name' attributes
+        user_input = request.form.get('username')
+        pass_input = request.form.get('password')
+        
+        user = User.query.filter_by(username=user_input).first()
+        if user and user.password == pass_input:
             login_user(user)
             return redirect(url_for('admin_dashboard'))
-        flash('Invalid Access Code')
+        
+        flash('Unauthorized: Incorrect credentials.')
     return render_template('login.html')
 
 @app.route('/admin')
@@ -70,20 +74,12 @@ def admin_dashboard():
 @login_required
 def add_car():
     new_car = Car(
-        model=request.form['model'], 
-        price=request.form['price'], 
-        description=request.form['description'],
+        model=request.form.get('model'), 
+        price=request.form.get('price'), 
+        description=request.form.get('description'),
         image_url=request.form.get('image_url')
     )
     db.session.add(new_car)
-    db.session.commit()
-    return redirect(url_for('admin_dashboard'))
-
-@app.route('/delete_car/<int:id>')
-@login_required
-def delete_car(id):
-    car = Car.query.get(id)
-    db.session.delete(car)
     db.session.commit()
     return redirect(url_for('admin_dashboard'))
 
