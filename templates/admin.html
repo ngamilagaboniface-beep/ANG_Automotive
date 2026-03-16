@@ -2,62 +2,57 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | ANG Automotive</title>
+    <title>ANG Admin | Media Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #0a0a0a; font-family: 'Inter', sans-serif; }
-        .card { background: #141414; border: 1px solid #262626; }
-    </style>
 </head>
-<body class="text-gray-200">
-
-    <nav class="border-b border-zinc-800 bg-black/50 backdrop-blur-md sticky top-0 z-50">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-black italic tracking-tighter text-orange-500">ANG <span class="text-white">ADMIN</span></h1>
-            <div class="flex items-center gap-6">
-                <a href="/" class="text-xs uppercase tracking-widest hover:text-orange-500 transition">View Site</a>
-                <a href="/logout" class="bg-zinc-800 hover:bg-red-600 text-white text-[10px] uppercase font-bold px-4 py-2 rounded-lg transition">Logout</a>
-            </div>
+<body class="bg-zinc-950 text-white p-6 md:p-12">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-12">
+            <h1 class="text-3xl font-black italic text-orange-500">ANG CONTROL PANEL</h1>
+            <a href="/logout" class="bg-red-600 px-4 py-2 rounded-lg text-xs font-bold uppercase">Logout</a>
         </div>
-    </nav>
 
-    <main class="container mx-auto px-6 py-10">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            
-            <div class="lg:col-span-1">
-                <div class="card p-8 rounded-2xl shadow-2xl">
-                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
-                        <span class="w-2 h-6 bg-orange-500 rounded-full"></span>
-                        Inventory Entry
-                    </h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div class="bg-zinc-900 p-8 rounded-[2.5rem] border border-zinc-800">
+                <h2 class="text-xl font-bold mb-6">New Inventory Entry</h2>
+                <form action="/upload" method="POST" enctype="multipart/form-data" class="space-y-4">
+                    <select name="type" class="w-full bg-black p-4 rounded-xl border border-zinc-800 text-sm">
+                        <option value="car">Showroom Vehicle</option>
+                        <option value="part">Spare Part</option>
+                    </select>
                     
-                    <form action="/add_car" method="POST" class="space-y-5">
-                        <div>
-                            <label class="block text-[10px] uppercase text-gray-500 font-bold mb-2">Car Model</label>
-                            <input type="text" name="model" placeholder="e.g. BMW M4 Competition" required
-                                class="w-full bg-black border border-zinc-800 rounded-xl p-4 focus:border-orange-500 outline-none text-sm">
+                    <input type="text" name="name" placeholder="Item Name (e.g. BMW M5)" required class="w-full bg-black p-4 rounded-xl border border-zinc-800 outline-none focus:border-orange-500">
+                    <input type="number" name="price" placeholder="Price (Numbers Only)" required class="w-full bg-black p-4 rounded-xl border border-zinc-800 outline-none focus:border-orange-500">
+                    <input type="text" name="cat" placeholder="Category (For Parts Only)" class="w-full bg-black p-4 rounded-xl border border-zinc-800 outline-none focus:border-orange-500">
+                    <textarea name="desc" placeholder="Specs / Features (For Cars)" class="w-full bg-black p-4 rounded-xl border border-zinc-800 h-24"></textarea>
+
+                    <div class="border-2 border-dashed border-zinc-700 p-8 rounded-2xl text-center bg-black/50 hover:border-orange-500 transition-colors">
+                        <input type="file" name="file" required class="text-xs text-zinc-500">
+                        <p class="text-[10px] uppercase tracking-widest mt-3 text-zinc-600">Select Item Photo</p>
+                    </div>
+
+                    <button class="w-full bg-orange-600 hover:bg-orange-500 py-4 rounded-2xl font-black uppercase tracking-widest transition-all">Upload to Cloud & Save</button>
+                </form>
+            </div>
+
+            <div class="bg-zinc-900 p-8 rounded-[2.5rem] border border-zinc-800 overflow-hidden">
+                <h2 class="text-xl font-bold mb-6">Live Sales Orders</h2>
+                <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2 no-scrollbar">
+                    {% for order in orders %}
+                    <div class="bg-black p-5 rounded-2xl border-l-4 border-orange-600">
+                        <div class="flex justify-between items-start">
+                            <span class="font-black text-white text-lg">{{ order.item_name }}</span>
+                            <span class="text-orange-500 font-mono font-bold">{{ "{:,.0f}".format(order.total_price) }}</span>
                         </div>
-                        <div>
-                            <label class="block text-[10px] uppercase text-gray-500 font-bold mb-2">Price (TZS/USD)</label>
-                            <input type="text" name="price" placeholder="e.g. $85,000" required
-                                class="w-full bg-black border border-zinc-800 rounded-xl p-4 focus:border-orange-500 outline-none text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] uppercase text-gray-500 font-bold mb-2">Image URL</label>
-                            <input type="text" name="image_url" placeholder="Link to car photo"
-                                class="w-full bg-black border border-zinc-800 rounded-xl p-4 focus:border-orange-500 outline-none text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] uppercase text-gray-500 font-bold mb-2">Description</label>
-                            <textarea name="description" rows="4" placeholder="Features, specs, condition..."
-                                class="w-full bg-black border border-zinc-800 rounded-xl p-4 focus:border-orange-500 outline-none text-sm"></textarea>
-                        </div>
-                        <button type="submit" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs transition-all shadow-lg shadow-orange-900/20">
-                            Add to Showroom
-                        </button>
-                    </form>
+                        <p class="text-xs text-zinc-500 mt-2 uppercase tracking-tighter">Customer: {{ order.customer_name }}</p>
+                        <p class="text-[9px] text-zinc-700 mt-1 italic">{{ order.date_ordered.strftime('%B %d, %H:%M') }}</p>
+                    </div>
+                    {% else %}
+                    <p class="text-zinc-600 italic text-center py-10">No orders yet. Waiting for first customer...</p>
+                    {% endfor %}
                 </div>
             </div>
-
-            <div class="lg:col-span-2">
+        </div>
+    </div>
+</body>
+</html>
