@@ -3,71 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ANG Performance | Showroom</title>
-    
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo512.png') }}">
-    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    <meta name="theme-color" content="#f97316">
-
+    <title>ANG Performance</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .tab-active { color: #f97316; border-bottom: 3px solid #f97316; }
         .hidden { display: none; }
+        #sidebar { transition: transform 0.3s ease-in-out; }
     </style>
 </head>
-<body class="bg-black text-white font-sans">
+<body class="bg-black text-white">
 
-    <div class="bg-zinc-900/50 sticky top-0 z-50 backdrop-blur-md border-b border-zinc-800">
-        <div class="container mx-auto px-6 py-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-            <h1 class="text-3xl font-black italic text-orange-500">ANG</h1>
-            <form action="/" method="GET" class="w-full md:w-1/2 relative">
-                <input type="text" name="search" placeholder="Search cars or parts..." value="{{ search_query or '' }}" 
-                       class="w-full bg-black border border-zinc-700 rounded-full px-6 py-2 text-sm outline-none focus:border-orange-500 transition">
-                <button type="submit" class="absolute right-4 top-2 text-zinc-500 font-bold">GO</button>
-            </form>
-            <div class="flex gap-6 uppercase text-[10px] font-bold tracking-widest">
-                <button onclick="switchTab('cars')" id="btn-cars" class="tab-active pb-1">Vehicles</button>
-                <button onclick="switchTab('parts')" id="btn-parts" class="pb-1">Spare Parts</button>
-            </div>
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-zinc-900 z-[100] transform -translate-x-full p-6 border-r border-zinc-800">
+        <button onclick="toggleMenu()" class="text-zinc-500 mb-8 font-bold">✕ CLOSE</button>
+        <h2 class="text-orange-500 font-black mb-4 uppercase tracking-widest text-xs">Car Brands</h2>
+        <div class="space-y-2 mb-8">
+            <a href="/" class="block text-sm hover:text-orange-500">All Brands</a>
+            {% for brand in brands %}
+            <a href="/?brand={{ brand }}" class="block text-sm hover:text-orange-500">{{ brand }}</a>
+            {% endfor %}
+        </div>
+        <h2 class="text-orange-500 font-black mb-4 uppercase tracking-widest text-xs">Part Types</h2>
+        <div class="space-y-2">
+            <a href="/" class="block text-sm hover:text-orange-500">All Categories</a>
+            {% for cat in categories %}
+            <a href="/?category={{ cat }}" class="block text-sm hover:text-orange-500">{{ cat }}</a>
+            {% endfor %}
+        </div>
+        <div class="mt-20 border-t border-zinc-800 pt-6">
+            <a href="/login" class="bg-zinc-800 block text-center py-3 rounded-xl text-xs font-bold hover:bg-orange-600 transition">STAFF LOGIN</a>
         </div>
     </div>
 
-    <main class="container mx-auto px-6 py-12">
-        {% if search_query %}
-            <p class="mb-8 text-zinc-500 italic">Showing results for: "{{ search_query }}"</p>
-        {% endif %}
+    <header class="sticky top-0 z-50 bg-black/80 backdrop-blur-lg border-b border-zinc-900 px-6 py-4">
+        <div class="container mx-auto flex items-center justify-between gap-4">
+            <button onclick="toggleMenu()" class="bg-zinc-900 p-2 px-4 rounded-lg font-bold text-xs uppercase">Menu</button>
+            <form action="/" class="flex-grow max-w-xl relative">
+                <input type="text" name="search" placeholder="Search ANG..." class="w-full bg-zinc-900 border border-zinc-800 rounded-full py-2 px-6 text-sm outline-none focus:border-orange-500">
+            </form>
+            <h1 class="text-2xl font-black italic text-orange-500 hidden md:block">ANG</h1>
+        </div>
+        <div class="flex justify-center gap-10 mt-4 text-[10px] font-black uppercase tracking-tighter">
+            <button onclick="switchTab('cars')" id="btn-cars" class="tab-active pb-2">Showroom</button>
+            <button onclick="switchTab('parts')" id="btn-parts" class="pb-2">Spare Parts</button>
+        </div>
+    </header>
 
-        <div id="view-cars" class="grid grid-cols-1 md:grid-cols-2 gap-10">
+    <main class="container mx-auto px-6 py-10">
+        <div id="view-cars" class="grid grid-cols-1 md:grid-cols-2 gap-8">
             {% for car in cars %}
-            <div class="bg-zinc-900 rounded-[2.5rem] overflow-hidden border border-zinc-800">
-                <img src="{{ car.image_url }}" class="w-full h-72 object-cover">
+            <div class="bg-zinc-900 rounded-[2rem] overflow-hidden border border-zinc-800">
+                <img src="{{ car.image_url }}" class="w-full h-64 object-cover">
                 <div class="p-8">
+                    <span class="text-[10px] font-bold text-orange-500 uppercase">{{ car.brand }}</span>
                     <h3 class="text-3xl font-bold italic">{{ car.model }}</h3>
-                    <p class="text-orange-500 text-2xl font-black mt-1">{{ "{:,.0f}".format(car.price) }} TZS</p>
-                    <p class="text-zinc-500 text-xs mt-4 leading-relaxed">{{ car.specs }}</p>
-                    <form action="/checkout/car/{{ car.id }}" method="POST" class="mt-8 space-y-3">
-                        <input type="text" name="customer_name" placeholder="Your Name" required class="w-full bg-black border border-zinc-700 p-3 rounded-xl text-sm">
-                        <input type="text" name="customer_phone" placeholder="Phone Number" required class="w-full bg-black border border-zinc-700 p-3 rounded-xl text-sm">
-                        <button class="w-full bg-white text-black font-black py-4 rounded-xl uppercase tracking-widest hover:bg-orange-500 transition">Place Order</button>
+                    <p class="text-2xl font-black mt-2">{{ "{:,.0f}".format(car.price) }} TZS</p>
+                    <form action="/checkout/car/{{ car.id }}" method="POST" class="mt-6 flex gap-2">
+                        <input type="text" name="customer_phone" placeholder="Phone" required class="bg-black border border-zinc-800 p-3 rounded-xl text-xs flex-grow">
+                        <button class="bg-white text-black font-black px-8 rounded-xl text-xs uppercase">Order</button>
                     </form>
                 </div>
             </div>
             {% endfor %}
         </div>
 
-        <div id="view-parts" class="hidden grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div id="view-parts" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4">
             {% for part in parts %}
-            <div class="bg-zinc-900 p-5 rounded-3xl border border-zinc-800 flex flex-col justify-between">
-                <div>
-                    <img src="{{ part.image_url }}" class="w-full h-40 object-cover rounded-2xl mb-4">
-                    <span class="text-[9px] bg-orange-500/10 text-orange-500 px-2 py-1 rounded-md font-bold uppercase">{{ part.category }}</span>
-                    <h4 class="font-bold text-lg mt-2 leading-tight">{{ part.name }}</h4>
-                    <p class="text-white font-black mt-1">{{ "{:,.0f}".format(part.price) }} TZS</p>
-                </div>
+            <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+                <img src="{{ part.image_url }}" class="w-full h-32 object-cover rounded-xl mb-4">
+                <h4 class="font-bold leading-tight">{{ part.name }}</h4>
+                <p class="text-orange-500 font-bold text-sm mt-1">{{ "{:,.0f}".format(part.price) }} TZS</p>
                 <form action="/checkout/part/{{ part.id }}" method="POST" class="mt-4">
-                    <input type="text" name="customer_name" placeholder="Name" required class="w-full bg-black border border-zinc-700 p-2 rounded-lg text-[10px] mb-2">
-                    <button class="w-full bg-orange-600 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest">Buy Now</button>
+                    <button class="w-full bg-zinc-800 py-2 rounded-lg text-[10px] font-black hover:bg-orange-600 transition">BUY NOW</button>
                 </form>
             </div>
             {% endfor %}
@@ -75,11 +81,15 @@
     </main>
 
     <script>
+        function toggleMenu() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.style.transform = sidebar.style.transform === 'translateX(0px)' ? 'translateX(-100%)' : 'translateX(0px)';
+        }
         function switchTab(type) {
             document.getElementById('view-cars').classList.toggle('hidden', type !== 'cars');
             document.getElementById('view-parts').classList.toggle('hidden', type !== 'parts');
-            document.getElementById('btn-cars').className = type === 'cars' ? 'tab-active pb-1' : 'pb-1';
-            document.getElementById('btn-parts').className = type === 'parts' ? 'tab-active pb-1' : 'pb-1';
+            document.getElementById('btn-cars').className = type === 'cars' ? 'tab-active pb-2' : 'pb-2';
+            document.getElementById('btn-parts').className = type === 'parts' ? 'tab-active pb-2' : 'pb-2';
         }
     </script>
 </body>
