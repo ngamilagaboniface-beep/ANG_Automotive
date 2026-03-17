@@ -12,40 +12,44 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        #splash { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.8s; }
-        .hide-splash { opacity: 0; pointer-events: none; }
         .tab-active { color: #f97316; border-bottom: 3px solid #f97316; }
         .hidden { display: none; }
     </style>
 </head>
 <body class="bg-black text-white font-sans">
 
-    <div id="splash">
-        <h1 class="text-6xl font-black italic text-orange-500 animate-pulse">ANG</h1>
-        <div class="w-48 h-1 bg-zinc-800 mt-4 overflow-hidden"><div class="h-full bg-orange-500 w-full animate-[load_2s_ease-in-out]"></div></div>
+    <div class="bg-zinc-900/50 sticky top-0 z-50 backdrop-blur-md border-b border-zinc-800">
+        <div class="container mx-auto px-6 py-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+            <h1 class="text-3xl font-black italic text-orange-500">ANG</h1>
+            <form action="/" method="GET" class="w-full md:w-1/2 relative">
+                <input type="text" name="search" placeholder="Search cars or parts..." value="{{ search_query or '' }}" 
+                       class="w-full bg-black border border-zinc-700 rounded-full px-6 py-2 text-sm outline-none focus:border-orange-500 transition">
+                <button type="submit" class="absolute right-4 top-2 text-zinc-500 font-bold">GO</button>
+            </form>
+            <div class="flex gap-6 uppercase text-[10px] font-bold tracking-widest">
+                <button onclick="switchTab('cars')" id="btn-cars" class="tab-active pb-1">Vehicles</button>
+                <button onclick="switchTab('parts')" id="btn-parts" class="pb-1">Spare Parts</button>
+            </div>
+        </div>
     </div>
 
-    <header class="py-10 border-b border-zinc-900 text-center">
-        <h1 class="text-6xl font-black italic text-orange-500">ANG</h1>
-        <div class="flex justify-center gap-8 mt-6 uppercase text-xs font-bold tracking-widest">
-            <button onclick="switchTab('cars')" id="btn-cars" class="tab-active pb-2">Vehicles</button>
-            <button onclick="switchTab('parts')" id="btn-parts" class="pb-2">Spare Parts</button>
-        </div>
-    </header>
-
     <main class="container mx-auto px-6 py-12">
+        {% if search_query %}
+            <p class="mb-8 text-zinc-500 italic">Showing results for: "{{ search_query }}"</p>
+        {% endif %}
+
         <div id="view-cars" class="grid grid-cols-1 md:grid-cols-2 gap-10">
             {% for car in cars %}
-            <div class="bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
+            <div class="bg-zinc-900 rounded-[2.5rem] overflow-hidden border border-zinc-800">
                 <img src="{{ car.image_url }}" class="w-full h-72 object-cover">
                 <div class="p-8">
-                    <h3 class="text-3xl font-bold">{{ car.model }}</h3>
-                    <p class="text-orange-500 text-2xl font-black">{{ "{:,.0f}".format(car.price) }} TZS</p>
-                    <p class="text-zinc-500 text-sm mt-4">{{ car.specs }}</p>
-                    <form action="/checkout/car/{{ car.id }}" method="POST" class="mt-6 space-y-3">
-                        <input type="text" name="customer_name" placeholder="Full Name" required class="w-full bg-black border border-zinc-700 p-3 rounded-xl">
-                        <input type="text" name="customer_phone" placeholder="Phone" required class="w-full bg-black border border-zinc-700 p-3 rounded-xl">
-                        <button class="w-full bg-white text-black font-bold py-3 rounded-xl uppercase">Order Vehicle</button>
+                    <h3 class="text-3xl font-bold italic">{{ car.model }}</h3>
+                    <p class="text-orange-500 text-2xl font-black mt-1">{{ "{:,.0f}".format(car.price) }} TZS</p>
+                    <p class="text-zinc-500 text-xs mt-4 leading-relaxed">{{ car.specs }}</p>
+                    <form action="/checkout/car/{{ car.id }}" method="POST" class="mt-8 space-y-3">
+                        <input type="text" name="customer_name" placeholder="Your Name" required class="w-full bg-black border border-zinc-700 p-3 rounded-xl text-sm">
+                        <input type="text" name="customer_phone" placeholder="Phone Number" required class="w-full bg-black border border-zinc-700 p-3 rounded-xl text-sm">
+                        <button class="w-full bg-white text-black font-black py-4 rounded-xl uppercase tracking-widest hover:bg-orange-500 transition">Place Order</button>
                     </form>
                 </div>
             </div>
@@ -54,14 +58,16 @@
 
         <div id="view-parts" class="hidden grid grid-cols-2 md:grid-cols-4 gap-6">
             {% for part in parts %}
-            <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800">
-                <img src="{{ part.image_url }}" class="w-full h-40 object-cover rounded-xl mb-4">
-                <span class="text-[10px] text-orange-500 font-bold uppercase">{{ part.category }}</span>
-                <h4 class="font-bold text-lg leading-tight mb-2">{{ part.name }}</h4>
-                <p class="text-white font-black">{{ "{:,.0f}".format(part.price) }} TZS</p>
+            <div class="bg-zinc-900 p-5 rounded-3xl border border-zinc-800 flex flex-col justify-between">
+                <div>
+                    <img src="{{ part.image_url }}" class="w-full h-40 object-cover rounded-2xl mb-4">
+                    <span class="text-[9px] bg-orange-500/10 text-orange-500 px-2 py-1 rounded-md font-bold uppercase">{{ part.category }}</span>
+                    <h4 class="font-bold text-lg mt-2 leading-tight">{{ part.name }}</h4>
+                    <p class="text-white font-black mt-1">{{ "{:,.0f}".format(part.price) }} TZS</p>
+                </div>
                 <form action="/checkout/part/{{ part.id }}" method="POST" class="mt-4">
-                    <input type="text" name="customer_name" placeholder="Name" required class="w-full bg-black border border-zinc-700 p-2 rounded-lg text-xs mb-2">
-                    <button class="w-full bg-orange-600 py-2 rounded-lg text-xs font-bold">BUY NOW</button>
+                    <input type="text" name="customer_name" placeholder="Name" required class="w-full bg-black border border-zinc-700 p-2 rounded-lg text-[10px] mb-2">
+                    <button class="w-full bg-orange-600 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest">Buy Now</button>
                 </form>
             </div>
             {% endfor %}
@@ -72,10 +78,9 @@
         function switchTab(type) {
             document.getElementById('view-cars').classList.toggle('hidden', type !== 'cars');
             document.getElementById('view-parts').classList.toggle('hidden', type !== 'parts');
-            document.getElementById('btn-cars').className = type === 'cars' ? 'tab-active pb-2' : 'pb-2';
-            document.getElementById('btn-parts').className = type === 'parts' ? 'tab-active pb-2' : 'pb-2';
+            document.getElementById('btn-cars').className = type === 'cars' ? 'tab-active pb-1' : 'pb-1';
+            document.getElementById('btn-parts').className = type === 'parts' ? 'tab-active pb-1' : 'pb-1';
         }
-        window.addEventListener('load', () => setTimeout(() => document.getElementById('splash').classList.add('hide-splash'), 2500));
     </script>
 </body>
 </html>
