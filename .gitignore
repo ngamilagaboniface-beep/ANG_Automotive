@@ -3,3 +3,5 @@ __pycache__/
 instance/
 .env
 ang_auto.db
+*.db
+instance/
