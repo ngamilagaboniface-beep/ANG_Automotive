@@ -7,7 +7,7 @@ import cloudinary
 import cloudinary.uploader
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'ANG_ULTIMATE_2026_KEY')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'ANG_ULTIMATE_2026_SECURE')
 
 # Cloudinary Config
 cloudinary.config(
@@ -16,7 +16,7 @@ cloudinary.config(
   api_secret = os.environ.get('CLOUDINARY_API_SECRET')
 )
 
-# Database Config
+# Database Setup
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'ang_auto.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -59,13 +59,23 @@ def load_user(id): return User.query.get(int(id))
 with app.app_context():
     db.create_all()
     if not User.query.filter_by(username='admin').first():
-        db.session.add(User(username='admin', password='ANG2026_Admin'))
+        db.session.add(User(username='admin', password='ANG2026_Admin')) # Default Credentials
         db.session.commit()
 
 # --- ROUTES ---
+
 @app.route('/')
 def index():
-    return render_template('index.html', cars=Car.query.all(), parts=Part.query.all())
+    query = request.args.get('search')
+    if query:
+        # Search across Models and Names
+        cars = Car.query.filter(Car.model.contains(query)).all()
+        parts = Part.query.filter((Part.name.contains(query)) | (Part.category.contains(query))).all()
+    else:
+        cars = Car.query.all()
+        parts = Part.query.all()
+    
+    return render_template('index.html', cars=cars, parts=parts, search_query=query)
 
 @app.route('/checkout/<type>/<int:id>', methods=['POST'])
 def checkout(type, id):
@@ -73,12 +83,26 @@ def checkout(type, id):
     new_order = Order(
         customer_name=request.form.get('customer_name'),
         customer_phone=request.form.get('customer_phone'),
-        item_name=getattr(item, 'model', getattr(item, 'name', 'Unknown Item')),
+        item_name=getattr(item, 'model', getattr(item, 'name', 'Item')),
         total_price=item.price
     )
     db.session.add(new_order)
     db.session.commit()
     return render_template('billing.html', order=new_order)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        user = User.query.filter_by(username=request.form.get('username')).first()
+        if user and user.password == request.form.get('password'):
+            login_user(user)
+            return redirect(url_for('admin_dashboard'))
+    return render_template('login.html')
+
+@app.route('/admin')
+@login_required
+def admin_dashboard():
+    return render_template('admin.html', orders=Order.query.order_by(Order.date_ordered.desc()).all())
 
 @app.route('/upload', methods=['POST'])
 @login_required
@@ -96,20 +120,6 @@ def upload():
     db.session.add(new_item)
     db.session.commit()
     return redirect(url_for('admin_dashboard'))
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        user = User.query.filter_by(username=request.form.get('username')).first()
-        if user and user.password == request.form.get('password'):
-            login_user(user)
-            return redirect(url_for('admin_dashboard'))
-    return render_template('login.html')
-
-@app.route('/admin')
-@login_required
-def admin_dashboard():
-    return render_template('admin.html', orders=Order.query.order_by(Order.date_ordered.desc()).all())
 
 @app.route('/logout')
 def logout():
