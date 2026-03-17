@@ -7,9 +7,9 @@ import cloudinary
 import cloudinary.uploader
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'ANG_ULTIMATE_2026_SECURE')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'ANG_PREMIUM_2026')
 
-# Cloudinary Config
+# Cloudinary Setup
 cloudinary.config(
   cloud_name = os.environ.get('CLOUDINARY_NAME'),
   api_key = os.environ.get('CLOUDINARY_API_KEY'),
@@ -19,8 +19,6 @@ cloudinary.config(
 # Database Setup
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'ang_auto.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -33,6 +31,7 @@ class User(UserMixin, db.Model):
 
 class Car(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    brand = db.Column(db.String(50)) # Added Brand
     model = db.Column(db.String(100))
     price = db.Column(db.Float)
     specs = db.Column(db.Text)
@@ -41,7 +40,7 @@ class Car(db.Model):
 class Part(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
-    category = db.Column(db.String(50))
+    category = db.Column(db.String(50)) # Added Category (e.g., Engine, Suspension)
     price = db.Column(db.Float)
     image_url = db.Column(db.String(500))
 
@@ -59,23 +58,36 @@ def load_user(id): return User.query.get(int(id))
 with app.app_context():
     db.create_all()
     if not User.query.filter_by(username='admin').first():
-        db.session.add(User(username='admin', password='ANG2026_Admin')) # Default Credentials
+        db.session.add(User(username='admin', password='ANG2026_Admin'))
         db.session.commit()
 
 # --- ROUTES ---
-
 @app.route('/')
 def index():
-    query = request.args.get('search')
-    if query:
-        # Search across Models and Names
-        cars = Car.query.filter(Car.model.contains(query)).all()
-        parts = Part.query.filter((Part.name.contains(query)) | (Part.category.contains(query))).all()
-    else:
-        cars = Car.query.all()
-        parts = Part.query.all()
-    
-    return render_template('index.html', cars=cars, parts=parts, search_query=query)
+    search = request.args.get('search')
+    brand = request.args.get('brand')
+    category = request.args.get('category')
+
+    car_query = Car.query
+    part_query = Part.query
+
+    if search:
+        car_query = car_query.filter(Car.model.contains(search))
+        part_query = part_query.filter(Part.name.contains(search))
+    if brand:
+        car_query = car_query.filter_by(brand=brand)
+    if category:
+        part_query = part_query.filter_by(category=category)
+
+    # Get unique lists for the menu filters
+    all_brands = db.session.query(Car.brand).distinct().all()
+    all_cats = db.session.query(Part.category).distinct().all()
+
+    return render_template('index.html', 
+                           cars=car_query.all(), 
+                           parts=part_query.all(),
+                           brands=[b[0] for b in all_brands if b[0]],
+                           categories=[c[0] for c in all_cats if c[0]])
 
 @app.route('/checkout/<type>/<int:id>', methods=['POST'])
 def checkout(type, id):
@@ -113,9 +125,11 @@ def upload():
     img_url = upload_result['secure_url']
     
     if item_type == 'car':
-        new_item = Car(model=request.form.get('name'), price=float(request.form.get('price')), specs=request.form.get('desc'), image_url=img_url)
+        new_item = Car(brand=request.form.get('brand'), model=request.form.get('name'), 
+                       price=float(request.form.get('price')), specs=request.form.get('desc'), image_url=img_url)
     else:
-        new_item = Part(name=request.form.get('name'), category=request.form.get('cat'), price=float(request.form.get('price')), image_url=img_url)
+        new_item = Part(name=request.form.get('name'), category=request.form.get('cat'), 
+                        price=float(request.form.get('price')), image_url=img_url)
     
     db.session.add(new_item)
     db.session.commit()
