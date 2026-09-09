@@ -65,7 +65,7 @@ class TelematicsGauges {
   }
 
   _updateShiftLights(rpm) {
-    const leds = document.querySelectorAll('.shift-led');
+    const leds = document.querySelectorAll('.m-led-lamp, .shift-led');
     if (!leds || leds.length === 0) return;
 
     // 10 LEDs: 0-3 Green (5000-6000), 4-7 Yellow (6000-7000), 8-9 Red (>7000)

@@ -4,7 +4,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize Gauges & Oscilloscope
+  // Initialize Gauges, Oscilloscope, and 3D Surface Visualizer
   const gauges = new TelematicsGauges();
   const oscilloscope = new TelemetryOscilloscope('telemetry-canvas');
   const surface3D = new SurfaceVisualizer3D('webgl-surface-canvas');
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentRole = 'MASTER_TUNER';
 
   // DOM Elements
-  const tabButtons = document.querySelectorAll('.nav-tab');
+  const tabButtons = document.querySelectorAll('.m-nav-btn, .nav-tab');
   const tabPanes = document.querySelectorAll('.tab-pane');
   const tableSelector = document.getElementById('table-selector');
   const stagePresetSelect = document.getElementById('stage-preset-select');
@@ -36,20 +36,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const flashStatusText = document.getElementById('flash-status-text');
   const terminalConsole = document.getElementById('terminal-console');
 
-  // Tab Navigation
+  // Tab Navigation Handler
   tabButtons.forEach(btn => {
     btn.addEventListener('click', (e) => {
       const targetTab = btn.getAttribute('data-tab');
-      if (!targetTab) return; // standard link
+      if (!targetTab) return; // standard href link
       e.preventDefault();
-      tabButtons.forEach(b => b.classList.remove('active'));
+      tabButtons.forEach(b => {
+        if (b.getAttribute('data-tab')) b.classList.remove('active');
+      });
       tabPanes.forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       const pane = document.getElementById(`tab-${targetTab}`);
       if (pane) pane.classList.add('active');
 
       if (targetTab === 'maps' && surface3D) {
-        setTimeout(() => surface3D._resizeCanvas(), 50);
+        setTimeout(() => surface3D._resizeCanvas(), 60);
       }
     });
   });
@@ -61,15 +63,19 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnM1) {
     btnM1.addEventListener('click', async () => {
       btnM1.classList.toggle('active-m1');
-      btnM2.classList.remove('active-m2');
+      if (btnM2) btnM2.classList.remove('active-m2');
       if (btnM1.classList.contains('active-m1')) {
         logTerminal(`[M DRIVE] M1 SPORT PLUS ACTIVATED: Stage 2 93 Octane, Active Flaps OPEN, Linear Throttle ON.`, 'info');
-        stagePresetSelect.value = 'STAGE_2';
-        stagePresetSelect.dispatchEvent(new Event('change'));
+        if (stagePresetSelect) {
+          stagePresetSelect.value = 'STAGE_2';
+          stagePresetSelect.dispatchEvent(new Event('change'));
+        }
       } else {
         logTerminal(`[M DRIVE] COMFORT MODE: OEM Baseline.`, 'info');
-        stagePresetSelect.value = 'STOCK';
-        stagePresetSelect.dispatchEvent(new Event('change'));
+        if (stagePresetSelect) {
+          stagePresetSelect.value = 'STOCK';
+          stagePresetSelect.dispatchEvent(new Event('change'));
+        }
       }
     });
   }
@@ -77,18 +83,25 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnM2) {
     btnM2.addEventListener('click', async () => {
       btnM2.classList.toggle('active-m2');
-      btnM1.classList.remove('active-m1');
+      if (btnM1) btnM1.classList.remove('active-m1');
       if (btnM2.classList.contains('active-m2')) {
         logTerminal(`[M DRIVE] M2 TRACK / E85 KILL MAP ACTIVATED: Stage 2+ E85, +4.5° Timing, Max Boost 22.5 PSI, GTS Overrun!`, 'warn');
-        stagePresetSelect.value = 'STAGE_2_E85';
-        stagePresetSelect.dispatchEvent(new Event('change'));
+        if (stagePresetSelect) {
+          stagePresetSelect.value = 'STAGE_2_E85';
+          stagePresetSelect.dispatchEvent(new Event('change'));
+        }
       } else {
         logTerminal(`[M DRIVE] COMFORT MODE: OEM Baseline.`, 'info');
-        stagePresetSelect.value = 'STOCK';
-        stagePresetSelect.dispatchEvent(new Event('change'));
+        if (stagePresetSelect) {
+          stagePresetSelect.value = 'STOCK';
+          stagePresetSelect.dispatchEvent(new Event('change'));
+        }
       }
     });
   }
+
+  // 1. Fetch ECU ROM Calibration Tables
+  async function loadCalibrationRom() {
     try {
       const res = await fetch('/api/ecu/rom');
       const data = await res.json();
@@ -98,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateCustomizationUI();
     } catch (err) {
       console.error('Failed to load ECU ROM:', err);
+      logTerminal(`Error loading ECU calibration: ${err.message}`, 'error');
     }
   }
 
@@ -134,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('table-grid-container');
     if (!container) return;
 
-    let html = `<table class="cal-table-grid"><thead><tr><th>Load / RPM</th>`;
+    let html = `<table class="table-matrix"><thead><tr><th>Load / RPM</th>`;
     tbl.x_axis.forEach(x => {
       html += `<th>${x.toFixed(0)}</th>`;
     });
@@ -161,7 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
         surface3D.render();
         container.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
         cell.classList.add('selected');
-        document.getElementById('selected-cell-val').value = tbl.matrix[y][x];
+        const input = document.getElementById('selected-cell-val');
+        if (input) input.value = tbl.matrix[y][x];
       });
     });
   }
@@ -186,7 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
     applyCellBtn.addEventListener('click', () => {
       if (!activeRomData || !activeRomData.tables) return;
       const tbl = activeRomData.tables[activeTableName];
-      const newVal = parseFloat(document.getElementById('selected-cell-val').value);
+      const cellInput = document.getElementById('selected-cell-val');
+      const newVal = parseFloat(cellInput ? cellInput.value : NaN);
       if (isNaN(newVal)) return;
 
       const { x, y } = surface3D.selectedCell;
@@ -196,7 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Bulk Table Offset (+1.0 / -1.0)
+  // Bulk Table Offset (+0.5 / -0.5)
   document.querySelectorAll('.btn-table-offset').forEach(btn => {
     btn.addEventListener('click', () => {
       if (!activeRomData || !activeRomData.tables) return;
@@ -337,36 +353,35 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 5. 50Hz Live Telematics Streaming Loop
-  let lastFetchTime = Date.now();
   async function pollLiveTelemetry() {
     try {
       const res = await fetch('/api/telemetry/live');
-      const snap = await res.json();
+      if (res.ok) {
+        const snap = await res.json();
 
-      // Update gauges & oscilloscope
-      gauges.update(snap);
-      oscilloscope.addPoint(snap);
+        // Update gauges & oscilloscope
+        gauges.update(snap);
+        oscilloscope.addPoint(snap);
 
-      // Update Digital Readout Badges
-      const setTxt = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = val;
-      };
+        // Update Digital Readout Badges
+        const setTxt = (id, val) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = val;
+        };
 
-      setTxt('live-stat-rpm', Math.round(snap.rpm));
-      setTxt('live-stat-boost', `${snap.boost_actual_psi.toFixed(1)} PSI`);
-      setTxt('live-stat-afr', snap.afr_actual.toFixed(2));
-      setTxt('live-stat-wgdc', `${snap.wgdc.toFixed(1)}%`);
-      setTxt('live-stat-coolant', `${snap.coolant_c.toFixed(0)}°C`);
-      setTxt('live-stat-oil', `${snap.oil_c.toFixed(0)}°C`);
-      setTxt('live-stat-egt', `${snap.egt_c.toFixed(0)}°C`);
-      setTxt('live-stat-hpfp', `${snap.hpfp_bar.toFixed(0)} bar`);
+        setTxt('live-stat-rpm', Math.round(snap.rpm));
+        setTxt('live-stat-boost', `${snap.boost_actual_psi.toFixed(1)} PSI`);
+        setTxt('live-stat-afr', snap.afr_actual.toFixed(2));
+        setTxt('live-stat-coolant', `${snap.coolant_c.toFixed(0)}°C`);
+        setTxt('live-stat-oil', `${snap.oil_c.toFixed(0)}°C`);
+        setTxt('live-stat-egt', `${snap.egt_c.toFixed(0)}°C`);
 
-      // Update Safety Monitor Card
-      const safetyBadge = document.getElementById('safety-status-badge');
-      if (safetyBadge && snap.safety) {
-        safetyBadge.className = `badge ${snap.safety.status === 'SAFE' ? 'badge-success' : (snap.safety.reversion_required ? 'badge-danger' : 'badge-warning')}`;
-        safetyBadge.textContent = snap.safety.status;
+        // Update Safety Monitor Card
+        const safetyBadge = document.getElementById('safety-status-badge');
+        if (safetyBadge && snap.safety) {
+          safetyBadge.className = `m-badge ${snap.safety.status === 'SAFE' ? 'm-badge-success' : (snap.safety.reversion_required ? 'm-badge-danger' : 'm-badge-warning')}`;
+          safetyBadge.textContent = snap.safety.status;
+        }
       }
     } catch (e) {
       // transient network poll error
@@ -380,12 +395,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (throttleSlider) {
     throttleSlider.addEventListener('input', (e) => {
       const val = parseFloat(e.target.value);
-      document.getElementById('sim-throttle-val').textContent = `${val.toFixed(0)}%`;
+      const valEl = document.getElementById('sim-throttle-val');
+      if (valEl) valEl.textContent = `${val.toFixed(0)}%`;
       fetch('/api/simulator/throttle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ throttle_pct: val })
-      });
+      }).catch(() => {});
     });
   }
 
@@ -424,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     let html = '';
     dtcs.forEach(d => {
-      html += `<div class="dtc-item"><div class="dtc-code">${d.code}</div><div class="dtc-desc">${d.description}</div><span class="badge badge-warning">${d.status}</span></div>`;
+      html += `<div class="dtc-item"><div class="dtc-code">${d.code}</div><div class="dtc-desc">${d.description}</div><span class="m-badge m-badge-warning">${d.status}</span></div>`;
     });
     list.innerHTML = html;
   }
@@ -457,11 +473,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let recHtml = '';
     (report.recommendations || []).forEach(r => {
-      const colorClass = r.severity === 'CRITICAL' ? 'badge-danger' : (r.severity === 'WARNING' ? 'badge-warning' : 'badge-success');
-      recHtml += `<div style="background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 0.85rem; border-radius: 6px; margin-bottom: 0.5rem;">
+      const colorClass = r.severity === 'CRITICAL' ? 'm-badge-danger' : (r.severity === 'WARNING' ? 'm-badge-warning' : 'm-badge-success');
+      recHtml += `<div style="background: var(--bg-carbon); border: 1px solid var(--border-subtle); padding: 0.85rem; border-radius: 6px; margin-bottom: 0.5rem;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
           <strong style="color: #fff;">${r.category}</strong>
-          <span class="badge ${colorClass}">${r.severity}</span>
+          <span class="m-badge ${colorClass}">${r.severity}</span>
         </div>
         <div style="font-size: 0.8rem; color: var(--text-secondary);">${r.message}</div>
         <div style="font-size: 0.78rem; color: var(--accent-cyan); margin-top: 0.25rem;">Action: ${r.action}</div>
@@ -469,15 +485,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     container.innerHTML = `
-      <div class="grid-top-stats" style="margin-top: 1rem;">
-        <div class="stat-card"><div class="stat-label">Peak Boost</div><div class="stat-val">${s.peak_boost_psi} <span class="stat-unit">PSI</span></div></div>
-        <div class="stat-card"><div class="stat-label">Max Knock Retard</div><div class="stat-val ${s.max_knock_retard > 3 ? 'text-red' : ''}">${s.max_knock_retard}°</div></div>
-        <div class="stat-card"><div class="stat-label">WOT Mean Lambda</div><div class="stat-val">${s.wot_mean_lambda}</div></div>
-        <div class="stat-card"><div class="stat-label">Peak EGT</div><div class="stat-val">${s.peak_egt_c}°C</div></div>
+      <div class="m-kpi-grid" style="margin-top: 1rem;">
+        <div class="m-kpi-card blue"><div class="m-kpi-label">Peak Boost</div><div class="m-kpi-value">${s.peak_boost_psi} <span class="m-kpi-unit">PSI</span></div></div>
+        <div class="m-kpi-card yellow"><div class="m-kpi-label">Max Knock Retard</div><div class="m-kpi-value" style="color: ${s.max_knock_retard > 3 ? '#ff4d4d' : 'inherit'};">${s.max_knock_retard}°</div></div>
+        <div class="m-kpi-card green"><div class="m-kpi-label">WOT Mean Lambda</div><div class="m-kpi-value">${s.wot_mean_lambda}</div></div>
+        <div class="m-kpi-card"><div class="m-kpi-label">Peak EGT</div><div class="m-kpi-value">${s.peak_egt_c}°C</div></div>
       </div>
       <h4 style="margin: 1.25rem 0 0.75rem 0; color: #fff;">AI Calibration Insights & Recommendations</h4>
       ${recHtml}
-      <button id="btn-apply-ai-tune" class="btn btn-primary" style="margin-top: 0.75rem;"><i class="fas fa-magic"></i> Auto-Apply AI Timing & Boost Optimizations</button>
+      <button id="btn-apply-ai-tune" class="btn-m-action" style="margin-top: 0.75rem;"><i class="fas fa-magic"></i> Auto-Apply AI Timing & Boost Optimizations</button>
     `;
 
     document.getElementById('btn-apply-ai-tune')?.addEventListener('click', async () => {
