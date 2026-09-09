@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANG Automotive | Order Invoice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ang_telematics.css') }}">
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+  <div class="m-power-top-bar"></div>
+  <div class="m-panel" style="width: 100%; max-width: 540px; padding: 2.25rem;">
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <div class="m-badge-emblem" style="margin: 0 auto 0.75rem auto;">
+        <div class="m-stripes-svg">
+          <span class="b1"></span>
+          <span class="b2"></span>
+          <span class="b3"></span>
+        </div>
+        <span class="m-letter">M</span>
+      </div>
+      <h2 style="color: #fff; font-size: 1.35rem; font-weight: 900;">Order Processed Successfully</h2>
+      <p style="color: var(--accent-green); font-size: 0.9rem; font-weight: 700; margin-top: 0.25rem;">
+        <i class="fas fa-check-circle"></i> Official Invoice #{{ order.id }} Generated
+      </p>
+    </div>
+
+    <div style="background: var(--bg-carbon); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem; font-size: 0.88rem; line-height: 2.0;">
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-secondary);">Customer:</span>
+        <strong style="color: #fff;">{{ order.customer_name }}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-secondary);">Contact Phone:</span>
+        <span style="font-family: var(--font-mono); color: var(--accent-cyan);">{{ order.customer_phone }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-secondary);">Item Ordered:</span>
+        <strong style="color: #fff;">{{ order.item_name }}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem; margin-top: 0.5rem; font-size: 1.15rem;">
+        <span style="font-weight: 700;">Total Payable:</span>
+        <strong style="color: var(--accent-green); font-family: var(--font-mono); font-size: 1.3rem;">${{ "{:,.2f}".format(order.total_price) }}</strong>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 1rem;">
+      <a href="/" class="btn-m-action" style="flex: 1; justify-content: center;">
+        <i class="fas fa-gauge-high"></i> Live Cockpit
+      </a>
+      <a href="/marketplace" class="btn-m-secondary" style="flex: 1; justify-content: center;">
+        <i class="fas fa-arrow-left"></i> Showroom
+      </a>
+    </div>
+  </div>
+</body>
+</html>

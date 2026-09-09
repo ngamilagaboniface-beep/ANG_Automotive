@@ -1,5 +1,10 @@
-Flask
-Flask-SQLAlchemy
-Flask-Login
-cloudinary
-gunicorn
+Flask>=3.0.0
+Flask-SQLAlchemy>=3.1.0
+Flask-Login>=0.6.3
+cryptography>=42.0.0
+numpy>=1.24.0
+scipy>=1.11.0
+pandas>=2.0.0
+pytest>=8.0.0
+cloudinary>=1.36.0
+gunicorn>=21.2.0

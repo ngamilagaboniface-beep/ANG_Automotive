@@ -1,58 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>ANG Admin | Media Center</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANG Automotive | BMW ///M Admin &amp; Flash Audit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ang_telematics.css') }}">
 </head>
-<body class="bg-zinc-950 text-white p-6 md:p-12">
-    <div class="max-w-6xl mx-auto">
-        <div class="flex justify-between items-center mb-12">
-            <h1 class="text-3xl font-black italic text-orange-500">ANG CONTROL PANEL</h1>
-            <a href="/logout" class="bg-red-600 px-4 py-2 rounded-lg text-xs font-bold uppercase">Logout</a>
+<body>
+  <div class="m-power-top-bar"></div>
+
+  <header class="bmw-header">
+    <a href="/" class="m-logo-block">
+      <div class="m-badge-emblem">
+        <div class="m-stripes-svg">
+          <span class="b1"></span>
+          <span class="b2"></span>
+          <span class="b3"></span>
         </div>
+        <span class="m-letter">M</span>
+      </div>
+      <div class="brand-text-block">
+        <span class="brand-main-title">ANG AUTOMOTIVE</span>
+        <span class="brand-sub-title">ADMIN AUDIT &amp; SECURITY PORTAL</span>
+      </div>
+    </a>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <div class="bg-zinc-900 p-8 rounded-[2.5rem] border border-zinc-800">
-                <h2 class="text-xl font-bold mb-6">New Inventory Entry</h2>
-                <form action="/upload" method="POST" enctype="multipart/form-data" class="space-y-4">
-                    <select name="type" class="w-full bg-black p-4 rounded-xl border border-zinc-800 text-sm">
-                        <option value="car">Showroom Vehicle</option>
-                        <option value="part">Spare Part</option>
-                    </select>
-                    
-                    <input type="text" name="name" placeholder="Item Name (e.g. BMW M5)" required class="w-full bg-black p-4 rounded-xl border border-zinc-800 outline-none focus:border-orange-500">
-                    <input type="number" name="price" placeholder="Price (Numbers Only)" required class="w-full bg-black p-4 rounded-xl border border-zinc-800 outline-none focus:border-orange-500">
-                    <input type="text" name="cat" placeholder="Category (For Parts Only)" class="w-full bg-black p-4 rounded-xl border border-zinc-800 outline-none focus:border-orange-500">
-                    <textarea name="desc" placeholder="Specs / Features (For Cars)" class="w-full bg-black p-4 rounded-xl border border-zinc-800 h-24"></textarea>
+    <nav class="m-nav-bar">
+      <a href="/" class="m-nav-btn"><i class="fas fa-gauge-high"></i> Live Cockpit</a>
+      <a href="/marketplace" class="m-nav-btn"><i class="fas fa-car"></i> Showroom</a>
+      <a href="/admin" class="m-nav-btn active"><i class="fas fa-user-shield"></i> Admin Panel</a>
+      <a href="/logout" class="m-nav-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </nav>
+  </header>
 
-                    <div class="border-2 border-dashed border-zinc-700 p-8 rounded-2xl text-center bg-black/50 hover:border-orange-500 transition-colors">
-                        <input type="file" name="file" required class="text-xs text-zinc-500">
-                        <p class="text-[10px] uppercase tracking-widest mt-3 text-zinc-600">Select Item Photo</p>
-                    </div>
-
-                    <button class="w-full bg-orange-600 hover:bg-orange-500 py-4 rounded-2xl font-black uppercase tracking-widest transition-all">Upload to Cloud & Save</button>
-                </form>
-            </div>
-
-            <div class="bg-zinc-900 p-8 rounded-[2.5rem] border border-zinc-800 overflow-hidden">
-                <h2 class="text-xl font-bold mb-6">Live Sales Orders</h2>
-                <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2 no-scrollbar">
-                    {% for order in orders %}
-                    <div class="bg-black p-5 rounded-2xl border-l-4 border-orange-600">
-                        <div class="flex justify-between items-start">
-                            <span class="font-black text-white text-lg">{{ order.item_name }}</span>
-                            <span class="text-orange-500 font-mono font-bold">{{ "{:,.0f}".format(order.total_price) }}</span>
-                        </div>
-                        <p class="text-xs text-zinc-500 mt-2 uppercase tracking-tighter">Customer: {{ order.customer_name }}</p>
-                        <p class="text-[9px] text-zinc-700 mt-1 italic">{{ order.date_ordered.strftime('%B %d, %H:%M') }}</p>
-                    </div>
-                    {% else %}
-                    <p class="text-zinc-600 italic text-center py-10">No orders yet. Waiting for first customer...</p>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
+  <main class="m-main-layout">
+    <div class="m-panel">
+      <div class="m-panel-header">
+        <div class="m-panel-title"><i class="fas fa-lock" style="color: var(--accent-yellow);"></i> Encrypted SQLite Flash Audit Trail (ISO 14229)</div>
+        <span class="m-badge m-badge-success">AES-256-GCM Cryptographic Log</span>
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="table-matrix" style="text-align: left; width: 100%;">
+          <thead>
+            <tr>
+              <th style="padding: 0.75rem;">ID</th>
+              <th style="padding: 0.75rem;">VIN</th>
+              <th style="padding: 0.75rem;">ECU Type</th>
+              <th style="padding: 0.75rem;">Stage</th>
+              <th style="padding: 0.75rem;">Role</th>
+              <th style="padding: 0.75rem;">Dongle ID</th>
+              <th style="padding: 0.75rem;">Status</th>
+              <th style="padding: 0.75rem;">Details</th>
+              <th style="padding: 0.75rem;">Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in flash_logs %}
+            <tr>
+              <td style="padding: 0.65rem 0.75rem; font-family: var(--font-mono);">#{{ log.id }}</td>
+              <td style="padding: 0.65rem 0.75rem; font-family: var(--font-mono); color: var(--accent-cyan);">{{ log.vin }}</td>
+              <td style="padding: 0.65rem 0.75rem;">{{ log.ecu_type }}</td>
+              <td style="padding: 0.65rem 0.75rem;"><span class="m-badge m-badge-info">{{ log.stage }}</span></td>
+              <td style="padding: 0.65rem 0.75rem;">{{ log.tuner_role }}</td>
+              <td style="padding: 0.65rem 0.75rem; font-family: var(--font-mono);">{{ log.dongle_id }}</td>
+              <td style="padding: 0.65rem 0.75rem;"><span class="m-badge {{ 'm-badge-success' if log.status == 'SUCCESS' else 'm-badge-warning' }}">{{ log.status }}</span></td>
+              <td style="padding: 0.65rem 0.75rem; text-align: left; font-size: 0.75rem; color: var(--text-secondary);">{{ log.log_details }}</td>
+              <td style="padding: 0.65rem 0.75rem; font-family: var(--font-mono); font-size: 0.75rem;">{{ log.created_at }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="9" style="padding: 2rem; color: var(--text-muted); text-align: center;">No flash operations logged yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
+
+    <div class="m-panel" style="margin-top: 2rem;">
+      <div class="m-panel-header">
+        <div class="m-panel-title"><i class="fas fa-file-invoice-dollar" style="color: var(--accent-green);"></i> Customer Hardware &amp; Tuning Orders</div>
+        <span class="m-badge m-badge-info">Payment &amp; Invoicing</span>
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="table-matrix" style="text-align: left; width: 100%;">
+          <thead>
+            <tr>
+              <th style="padding: 0.75rem;">Order ID</th>
+              <th style="padding: 0.75rem;">Customer Name</th>
+              <th style="padding: 0.75rem;">Phone</th>
+              <th style="padding: 0.75rem;">Item Ordered</th>
+              <th style="padding: 0.75rem;">Total Amount</th>
+              <th style="padding: 0.75rem;">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in orders %}
+            <tr>
+              <td style="padding: 0.65rem 0.75rem; font-family: var(--font-mono);">#{{ order.id }}</td>
+              <td style="padding: 0.65rem 0.75rem; font-weight: 700; color: #fff;">{{ order.customer_name }}</td>
+              <td style="padding: 0.65rem 0.75rem; font-family: var(--font-mono);">{{ order.customer_phone }}</td>
+              <td style="padding: 0.65rem 0.75rem;"><strong>{{ order.item_name }}</strong></td>
+              <td style="padding: 0.65rem 0.75rem; color: var(--accent-green); font-weight: 900; font-family: var(--font-mono);">${{ "{:,.2f}".format(order.total_price) }}</td>
+              <td style="padding: 0.65rem 0.75rem; font-family: var(--font-mono); font-size: 0.75rem;">{{ order.date_ordered.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" style="padding: 2rem; color: var(--text-muted); text-align: center;">No customer orders recorded yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
 </body>
 </html>

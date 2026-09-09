@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANG Automotive | BMW ///M Showroom &amp; Hardware</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ang_telematics.css') }}">
+</head>
+<body>
+  <div class="m-power-top-bar"></div>
+
+  <header class="bmw-header">
+    <a href="/" class="m-logo-block">
+      <div class="m-badge-emblem">
+        <div class="m-stripes-svg">
+          <span class="b1"></span>
+          <span class="b2"></span>
+          <span class="b3"></span>
+        </div>
+        <span class="m-letter">M</span>
+      </div>
+      <div class="brand-text-block">
+        <span class="brand-main-title">ANG AUTOMOTIVE</span>
+        <span class="brand-sub-title">PERFORMANCE SHOWROOM &amp; HARDWARE</span>
+      </div>
+    </a>
+
+    <nav class="m-nav-bar">
+      <a href="/" class="m-nav-btn"><i class="fas fa-gauge-high"></i> Live Cockpit</a>
+      <a href="/marketplace" class="m-nav-btn active"><i class="fas fa-car"></i> Showroom</a>
+      {% if current_user.is_authenticated %}
+        <a href="/admin" class="m-nav-btn"><i class="fas fa-user-shield"></i> Admin</a>
+        <a href="/logout" class="m-nav-btn"><i class="fas fa-sign-out-alt"></i></a>
+      {% else %}
+        <a href="/login" class="m-nav-btn"><i class="fas fa-key"></i> Login</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main class="m-main-layout">
+    <!-- Tuned Vehicle Fleet -->
+    <div class="m-panel">
+      <div class="m-panel-header">
+        <div class="m-panel-title"><i class="fas fa-car" style="color: var(--bmw-m-blue);"></i> Calibrated BMW ///M Vehicles &amp; Track Fleet</div>
+        <span class="m-badge m-badge-info">Turnkey Pre-Tuned</span>
+      </div>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
+        Complete turn-key BMW M-Performance vehicles equipped with ANG Stage 2/3 calibrations, unlocked DME bootloaders, and performance telemetry hardware.
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.5rem;">
+        {% for car in cars %}
+        <div class="m-panel" style="background: var(--bg-carbon); border: 1px solid var(--border-subtle); margin-bottom: 0;">
+          <div style="height: 190px; overflow: hidden; border-radius: 8px; margin-bottom: 1rem; background: #000; position: relative;">
+            <img src="{{ car.image_url }}" alt="{{ car.model }}" style="width: 100%; height: 100%; object-fit: cover;">
+            <div style="position: absolute; bottom: 8px; left: 8px;">
+              <span class="m-badge m-badge-success">ANG CALIBRATED</span>
+            </div>
+          </div>
+          <h3 style="color: #fff; font-size: 1.15rem; font-weight: 800; margin-bottom: 0.25rem;">{{ car.brand }} {{ car.model }}</h3>
+          <div style="font-size: 1.4rem; font-weight: 900; color: var(--accent-green); font-family: var(--font-mono); margin-bottom: 0.5rem;">
+            ${{ "{:,.2f}".format(car.price) }}
+          </div>
+          <p style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5; margin-bottom: 1.25rem; min-height: 48px;">
+            {{ car.specs }}
+          </p>
+          <form action="/checkout/car/{{ car.id }}" method="POST">
+            <input type="text" name="customer_name" class="m-input" placeholder="Buyer Full Name" required style="margin-bottom: 0.5rem;">
+            <input type="tel" name="customer_phone" class="m-input" placeholder="Phone Number / WhatsApp" required style="margin-bottom: 0.75rem;">
+            <button type="submit" class="btn-m-action" style="width: 100%; justify-content: center;">
+              <i class="fas fa-shopping-cart"></i> Order Vehicle
+            </button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Tuning Hardware & Dongles -->
+    <div class="m-panel" style="margin-top: 2rem;">
+      <div class="m-panel-header">
+        <div class="m-panel-title"><i class="fas fa-wrench" style="color: var(--accent-yellow);"></i> ENET Hardware Bridges &amp; Flasher Hardware</div>
+        <span class="m-badge m-badge-warning">Hardware Authenticated</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
+        {% for part in parts %}
+        <div class="m-panel" style="background: var(--bg-carbon); border: 1px solid var(--border-subtle); margin-bottom: 0;">
+          <div style="height: 150px; overflow: hidden; border-radius: 8px; margin-bottom: 1rem; background: #000;">
+            <img src="{{ part.image_url }}" alt="{{ part.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <span class="m-badge m-badge-info" style="margin-bottom: 0.5rem;">{{ part.category }}</span>
+          <h4 style="color: #fff; font-size: 1.0rem; font-weight: 800; margin-bottom: 0.25rem;">{{ part.name }}</h4>
+          <div style="font-size: 1.25rem; font-weight: 900; color: var(--accent-cyan); font-family: var(--font-mono); margin-bottom: 0.75rem;">
+            ${{ "{:,.2f}".format(part.price) }}
+          </div>
+          <form action="/checkout/part/{{ part.id }}" method="POST">
+            <input type="text" name="customer_name" class="m-input" placeholder="Buyer Full Name" required style="margin-bottom: 0.5rem;">
+            <input type="tel" name="customer_phone" class="m-input" placeholder="Phone Number" required style="margin-bottom: 0.75rem;">
+            <button type="submit" class="btn-m-action btn-sm" style="width: 100%; justify-content: center;">
+              <i class="fas fa-cart-plus"></i> Order Hardware
+            </button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </main>
+</body>
+</html>

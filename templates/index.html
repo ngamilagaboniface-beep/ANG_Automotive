@@ -1,96 +1,474 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ANG Performance</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .tab-active { color: #f97316; border-bottom: 3px solid #f97316; }
-        .hidden { display: none; }
-        #sidebar { transition: transform 0.3s ease-in-out; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANG Automotive | BMW ///M Motorsport Diagnostic &amp; Remote ECU Tuning</title>
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom BMW M Styling -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ang_telematics.css') }}">
 </head>
-<body class="bg-black text-white">
+<body>
+  <!-- Authentic M-Power 3-Stripe Ribbon -->
+  <div class="m-power-top-bar"></div>
 
-    <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-zinc-900 z-[100] transform -translate-x-full p-6 border-r border-zinc-800">
-        <button onclick="toggleMenu()" class="text-zinc-500 mb-8 font-bold">✕ CLOSE</button>
-        <h2 class="text-orange-500 font-black mb-4 uppercase tracking-widest text-xs">Car Brands</h2>
-        <div class="space-y-2 mb-8">
-            <a href="/" class="block text-sm hover:text-orange-500">All Brands</a>
-            {% for brand in brands %}
-            <a href="/?brand={{ brand }}" class="block text-sm hover:text-orange-500">{{ brand }}</a>
-            {% endfor %}
+  <!-- BMW Header -->
+  <header class="bmw-header">
+    <a href="/" class="m-logo-block">
+      <div class="m-badge-emblem">
+        <div class="m-stripes-svg">
+          <span class="b1"></span>
+          <span class="b2"></span>
+          <span class="b3"></span>
         </div>
-        <h2 class="text-orange-500 font-black mb-4 uppercase tracking-widest text-xs">Part Types</h2>
-        <div class="space-y-2">
-            <a href="/" class="block text-sm hover:text-orange-500">All Categories</a>
-            {% for cat in categories %}
-            <a href="/?category={{ cat }}" class="block text-sm hover:text-orange-500">{{ cat }}</a>
-            {% endfor %}
+        <span class="m-letter">M</span>
+      </div>
+      <div class="brand-text-block">
+        <span class="brand-main-title">ANG AUTOMOTIVE</span>
+        <span class="brand-sub-title">BMW ///M TELEMATICS &amp; ECU TUNING</span>
+      </div>
+    </a>
+
+    <!-- Navigation Tabs -->
+    <nav class="m-nav-bar">
+      <button class="m-nav-btn active" data-tab="live"><i class="fas fa-gauge-high"></i> Live 50Hz Gauges</button>
+      <button class="m-nav-btn" data-tab="maps"><i class="fas fa-cube"></i> 3D Maps</button>
+      <button class="m-nav-btn" data-tab="flash"><i class="fas fa-bolt"></i> Reflash &amp; Profiles</button>
+      <button class="m-nav-btn" data-tab="datalog"><i class="fas fa-chart-line"></i> AI Datalogger</button>
+      <button class="m-nav-btn" data-tab="security"><i class="fas fa-shield-halved"></i> Hardware Bridge</button>
+      <a href="/marketplace" class="m-nav-btn"><i class="fas fa-car"></i> Showroom</a>
+      {% if current_user.is_authenticated %}
+        <a href="/admin" class="m-nav-btn"><i class="fas fa-user-shield"></i> Admin</a>
+        <a href="/logout" class="m-nav-btn"><i class="fas fa-sign-out-alt"></i></a>
+      {% else %}
+        <a href="/login" class="m-nav-btn"><i class="fas fa-key"></i> Login</a>
+      {% endif %}
+    </nav>
+
+    <!-- Header Controller & Status -->
+    <div class="m-drive-controller">
+      <!-- M1 / M2 Steering Wheel Mode Buttons -->
+      <button id="btn-m1-mode" class="btn-m-drive" title="M1 Mode: Sport+ Throttle & Stage 2 93 Octane"><i class="fas fa-bolt" style="color: var(--bmw-m-red);"></i> M1</button>
+      <button id="btn-m2-mode" class="btn-m-drive" title="M2 Mode: Track Attack Stage 2+ E85 Kill Map"><i class="fas fa-fire" style="color: var(--bmw-m-blue);"></i> M2</button>
+
+      <div class="status-indicator">
+        <span class="pulse-dot"></span>
+        <span>DoIP ISO 13400: CONNECTED</span>
+      </div>
+      <div class="status-indicator">
+        <i class="fas fa-car-battery" style="color: var(--accent-green);"></i>
+        <span id="header-battery-val">13.8V</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="m-main-layout">
+
+    <!-- TAB 1: LIVE 50Hz GAUGES & DIAGNOSTICS -->
+    <div id="tab-live" class="tab-pane active">
+      <div class="m-cockpit-hud">
+        <!-- 10-Stage Dynamic Shift Light Bar -->
+        <div class="m-shift-light-cluster">
+          <div class="m-led-lamp green"></div>
+          <div class="m-led-lamp green"></div>
+          <div class="m-led-lamp green"></div>
+          <div class="m-led-lamp green"></div>
+          <div class="m-led-lamp yellow"></div>
+          <div class="m-led-lamp yellow"></div>
+          <div class="m-led-lamp yellow"></div>
+          <div class="m-led-lamp yellow"></div>
+          <div class="m-led-lamp red"></div>
+          <div class="m-led-lamp red"></div>
         </div>
-        <div class="mt-20 border-t border-zinc-800 pt-6">
-            <a href="/login" class="bg-zinc-800 block text-center py-3 rounded-xl text-xs font-bold hover:bg-orange-600 transition">STAFF LOGIN</a>
+
+        <!-- Top Telemetry KPI Cards -->
+        <div class="m-kpi-grid">
+          <div class="m-kpi-card blue">
+            <div class="m-kpi-label">Engine Speed</div>
+            <div class="m-kpi-value"><span id="live-stat-rpm">750</span> <span class="m-kpi-unit">RPM</span></div>
+            <div class="m-kpi-sub">Idle Normal</div>
+          </div>
+          <div class="m-kpi-card blue">
+            <div class="m-kpi-label">Manifold Boost</div>
+            <div class="m-kpi-value"><span id="live-stat-boost">0.0 PSI</span></div>
+            <div class="m-kpi-sub">Target: <span id="stat-sub-boost-target">1013 hPa</span></div>
+          </div>
+          <div class="m-kpi-card gold">
+            <div class="m-kpi-label">M Dyno Power &amp; Torque</div>
+            <div class="m-kpi-value"><span id="live-dyno-hp">485 HP</span> <span class="m-kpi-unit">/</span> <span id="live-dyno-tq" style="font-size: 1.4rem;">650 Nm</span></div>
+            <div class="m-kpi-sub">Flywheel Output Model</div>
+          </div>
+          <div class="m-kpi-card green">
+            <div class="m-kpi-label">Air-Fuel Ratio</div>
+            <div class="m-kpi-value"><span id="live-stat-afr">14.70</span></div>
+            <div class="m-kpi-sub">Stoichiometric (λ 1.000)</div>
+          </div>
+          <div class="m-kpi-card">
+            <div class="m-kpi-label">Coolant / Oil Temp</div>
+            <div class="m-kpi-value"><span id="live-stat-coolant">92°C</span> <span class="m-kpi-unit">/</span> <span id="live-stat-oil">98°C</span></div>
+            <div class="m-kpi-sub">EGT: <span id="live-stat-egt">650°C</span></div>
+          </div>
+          <div class="m-kpi-card yellow">
+            <div class="m-kpi-label">Safety Tripwires</div>
+            <div class="m-kpi-value"><span id="safety-status-badge" class="m-badge m-badge-success">SAFE</span></div>
+            <div class="m-kpi-sub">Zero Knock Corrections</div>
+          </div>
         </div>
+
+        <!-- 4-Dial Live Cockpit Gauges -->
+        <div class="m-cockpit-gauges-grid">
+          <!-- RPM Tachometer Dial -->
+          <div class="m-gauge-card">
+            <canvas id="gauge-rpm" class="m-gauge-canvas"></canvas>
+          </div>
+          <!-- TwinPower Turbo Boost Dial -->
+          <div class="m-gauge-card">
+            <canvas id="gauge-boost" class="m-gauge-canvas"></canvas>
+          </div>
+          <!-- AFR / Lambda Wideband Dial -->
+          <div class="m-gauge-card">
+            <canvas id="gauge-afr" class="m-gauge-canvas"></canvas>
+          </div>
+          <!-- 6-Cyl Timing Advance & Knock Bar Graph -->
+          <div class="m-gauge-card">
+            <canvas id="gauge-timing-knock" class="m-gauge-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Oscilloscope & DTC Scanner Grid -->
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+        <div class="m-panel">
+          <div class="m-panel-header">
+            <div class="m-panel-title"><i class="fas fa-wave-square" style="color: var(--accent-cyan);"></i> High-Speed 50Hz Telemetry Oscilloscope</div>
+            <span class="m-badge m-badge-info">Live UDS RAM Stream</span>
+          </div>
+          <div style="position: relative; height: 260px; background: #030508; border-radius: 8px; border: 1px solid var(--border-subtle); overflow: hidden;">
+            <canvas id="telemetry-canvas" style="width: 100%; height: 100%;"></canvas>
+          </div>
+          <div style="margin-top: 1rem; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; gap: 1rem; font-size: 0.82rem; font-family: var(--font-mono); font-weight: 700;">
+              <span style="color: #00e5ff;">■ Boost PSI</span>
+              <span style="color: #ffd600;">■ Engine RPM</span>
+              <span style="color: #00e676;">■ AFR Fueling</span>
+              <span style="color: #e60000;">■ Knock Retard</span>
+            </div>
+            <!-- Throttle simulator slider -->
+            <div style="display: flex; align-items: center; gap: 0.75rem; width: 320px;">
+              <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); white-space: nowrap;">Pedal Angle:</span>
+              <input type="range" id="sim-throttle-slider" class="m-slider" min="0" max="100" value="0">
+              <span id="sim-throttle-val" style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 800; color: var(--accent-cyan);">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- DTC Active Memory Panel -->
+        <div class="m-panel">
+          <div class="m-panel-header">
+            <div class="m-panel-title"><i class="fas fa-triangle-exclamation" style="color: var(--accent-yellow);"></i> Active ECU Fault Memory (DTC)</div>
+            <div style="display: flex; gap: 0.4rem;">
+              <button id="btn-read-dtc" class="btn-m-secondary"><i class="fas fa-rotate"></i> Read</button>
+              <button id="btn-clear-dtc" class="btn-m-secondary" style="color: var(--bmw-m-red);"><i class="fas fa-trash"></i> Clear</button>
+            </div>
+          </div>
+          <div id="dtc-results-list" class="dtc-list">
+            <div class="dtc-item">
+              <div class="dtc-code">120308</div>
+              <div class="dtc-desc">Charging pressure control: Pressure too low (Sporadic)</div>
+              <span class="m-badge m-badge-warning">ACTIVE</span>
+            </div>
+            <div class="dtc-item">
+              <div class="dtc-code">138104</div>
+              <div class="dtc-desc">Exhaust flap sport mode: Open position active</div>
+              <span class="m-badge m-badge-info">INFO</span>
+            </div>
+          </div>
+          <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: var(--text-muted);">
+            Target DME: <strong>Bosch MEVD17.2.G (BMW S55 Twin-Turbo)</strong> | Address <code>0x0012</code>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <header class="sticky top-0 z-50 bg-black/80 backdrop-blur-lg border-b border-zinc-900 px-6 py-4">
-        <div class="container mx-auto flex items-center justify-between gap-4">
-            <button onclick="toggleMenu()" class="bg-zinc-900 p-2 px-4 rounded-lg font-bold text-xs uppercase">Menu</button>
-            <form action="/" class="flex-grow max-w-xl relative">
-                <input type="text" name="search" placeholder="Search ANG..." class="w-full bg-zinc-900 border border-zinc-800 rounded-full py-2 px-6 text-sm outline-none focus:border-orange-500">
-            </form>
-            <h1 class="text-2xl font-black italic text-orange-500 hidden md:block">ANG</h1>
-        </div>
-        <div class="flex justify-center gap-10 mt-4 text-[10px] font-black uppercase tracking-tighter">
-            <button onclick="switchTab('cars')" id="btn-cars" class="tab-active pb-2">Showroom</button>
-            <button onclick="switchTab('parts')" id="btn-parts" class="pb-2">Spare Parts</button>
-        </div>
-    </header>
-
-    <main class="container mx-auto px-6 py-10">
-        <div id="view-cars" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {% for car in cars %}
-            <div class="bg-zinc-900 rounded-[2rem] overflow-hidden border border-zinc-800">
-                <img src="{{ car.image_url }}" class="w-full h-64 object-cover">
-                <div class="p-8">
-                    <span class="text-[10px] font-bold text-orange-500 uppercase">{{ car.brand }}</span>
-                    <h3 class="text-3xl font-bold italic">{{ car.model }}</h3>
-                    <p class="text-2xl font-black mt-2">{{ "{:,.0f}".format(car.price) }} TZS</p>
-                    <form action="/checkout/car/{{ car.id }}" method="POST" class="mt-6 flex gap-2">
-                        <input type="text" name="customer_phone" placeholder="Phone" required class="bg-black border border-zinc-800 p-3 rounded-xl text-xs flex-grow">
-                        <button class="bg-white text-black font-black px-8 rounded-xl text-xs uppercase">Order</button>
-                    </form>
-                </div>
+    <!-- TAB 2: 3D ENGINE MAP STUDIO -->
+    <div id="tab-maps" class="tab-pane">
+      <div class="m-3d-layout">
+        <!-- 3D WebGL Surface Canvas -->
+        <div class="m-panel" style="padding: 1.25rem;">
+          <div class="m-panel-header">
+            <div class="m-panel-title">
+              <i class="fas fa-cubes" style="color: var(--bmw-m-blue);"></i>
+              <span>3D Surface Map Visualizer</span>
             </div>
-            {% endfor %}
-        </div>
+            <select id="table-selector" class="m-select" style="width: 260px;"></select>
+          </div>
 
-        <div id="view-parts" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4">
-            {% for part in parts %}
-            <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-                <img src="{{ part.image_url }}" class="w-full h-32 object-cover rounded-xl mb-4">
-                <h4 class="font-bold leading-tight">{{ part.name }}</h4>
-                <p class="text-orange-500 font-bold text-sm mt-1">{{ "{:,.0f}".format(part.price) }} TZS</p>
-                <form action="/checkout/part/{{ part.id }}" method="POST" class="mt-4">
-                    <button class="w-full bg-zinc-800 py-2 rounded-lg text-[10px] font-black hover:bg-orange-600 transition">BUY NOW</button>
-                </form>
+          <div class="m-3d-canvas-wrap">
+            <canvas id="webgl-surface-canvas"></canvas>
+            <div class="m-overlay-nav">
+              <span style="font-size: 0.78rem; font-weight: 800; color: #fff;">3D NAVIGATION</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted);"><i class="fas fa-mouse"></i> Drag: Rotate View</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted);"><i class="fas fa-arrows-up-down"></i> Scroll: Zoom</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted);"><i class="fas fa-hand-pointer"></i> Click: Pick Cell</span>
             </div>
-            {% endfor %}
-        </div>
-    </main>
+            <div class="m-overlay-legend">
+              <span style="color: #60a5fa;">Low</span>
+              <div class="legend-bar"></div>
+              <span style="color: var(--bmw-m-red);">Peak</span>
+            </div>
+          </div>
 
-    <script>
-        function toggleMenu() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.style.transform = sidebar.style.transform === 'translateX(0px)' ? 'translateX(-100%)' : 'translateX(0px)';
-        }
-        function switchTab(type) {
-            document.getElementById('view-cars').classList.toggle('hidden', type !== 'cars');
-            document.getElementById('view-parts').classList.toggle('hidden', type !== 'parts');
-            document.getElementById('btn-cars').className = type === 'cars' ? 'tab-active pb-2' : 'pb-2';
-            document.getElementById('btn-parts').className = type === 'parts' ? 'tab-active pb-2' : 'pb-2';
-        }
-    </script>
+          <!-- 2D Spreadsheet Matrix Editor below 3D surface -->
+          <div style="margin-top: 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+            <h4 style="font-size: 0.95rem; font-weight: 800; color: #fff;">2D Table Cell Matrix Editor</h4>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);">Selected Value:</span>
+              <input type="number" id="selected-cell-val" class="m-input" style="width: 85px; padding: 0.35rem 0.6rem;" step="0.1">
+              <button id="btn-apply-cell" class="btn-m-action btn-sm">Apply</button>
+              <button class="btn-m-secondary btn-sm btn-table-offset" data-delta="0.5">+0.5</button>
+              <button class="btn-m-secondary btn-sm btn-table-offset" data-delta="-0.5">-0.5</button>
+            </div>
+          </div>
+          <div id="table-grid-container" class="table-editor-wrapper"></div>
+        </div>
+
+        <!-- Calibration Map Tuning Sidebar -->
+        <div>
+          <div class="m-panel">
+            <div class="m-panel-header">
+              <div class="m-panel-title"><i class="fas fa-sliders" style="color: var(--accent-cyan);"></i> Calibration Profile</div>
+            </div>
+            <div class="m-form-group">
+              <label class="m-form-label">Stage Preset</label>
+              <select id="stage-preset-select" class="m-select">
+                <option value="STAGE_2" selected>ANG Stage 2 (93 Oct / 98 RON)</option>
+                <option value="STAGE_1">ANG Stage 1 (91-93 Octane)</option>
+                <option value="STAGE_2_E85">ANG Stage 2+ Flex Fuel (E85)</option>
+                <option value="STOCK">Factory OEM Baseline (Stock)</option>
+              </select>
+            </div>
+            <div class="m-form-group">
+              <div class="m-form-label">
+                <span>Flex-Fuel Blend</span>
+                <span id="flex-fuel-val" class="m-val-pill">E10</span>
+              </div>
+              <input type="range" id="flex-fuel-slider" class="m-slider" min="0" max="85" value="10">
+            </div>
+            <div class="m-form-group">
+              <div class="m-form-label">
+                <span>Burble Duration</span>
+                <span id="burble-duration-val" class="m-val-pill">1.8s</span>
+              </div>
+              <input type="range" id="burble-duration-slider" class="m-slider" min="0.0" max="4.0" step="0.1" value="1.8">
+            </div>
+            <div class="m-form-group">
+              <label class="m-form-label">Burble Aggression</label>
+              <select id="burble-aggression-select" class="m-select">
+                <option value="SOFT">Soft (OEM Plus)</option>
+                <option value="MEDIUM" selected>Medium (Sporty ///M)</option>
+                <option value="HARD">Hard (Aggressive Overrun)</option>
+                <option value="GTS_CS">GTS / CS Track Spec</option>
+                <option value="FLAME">Flame / Backfire</option>
+              </select>
+            </div>
+
+            <!-- Toggles -->
+            <div class="m-switch-row">
+              <div>
+                <div class="m-switch-title">VMAX Speed Limiter Removal</div>
+                <div class="m-switch-desc">Unlocks 250 km/h factory governor to 330 km/h+</div>
+              </div>
+              <label class="m-toggle">
+                <input type="checkbox" id="toggle-vmax" checked>
+                <span class="m-toggle-round"></span>
+              </label>
+            </div>
+
+            <div class="m-switch-row">
+              <div>
+                <div class="m-switch-title">Cold Start Cat Heating Delete</div>
+                <div class="m-switch-desc">Quiet cold start for high-flow / catless downpipes</div>
+              </div>
+              <label class="m-toggle">
+                <input type="checkbox" id="toggle-cold-start">
+                <span class="m-toggle-round"></span>
+              </label>
+            </div>
+
+            <div class="m-switch-row">
+              <div>
+                <div class="m-switch-title">Exhaust Flap Sport Mode</div>
+                <div class="m-switch-desc">Keep dual exhaust valves 100% open in Sport/Sport+</div>
+              </div>
+              <label class="m-toggle">
+                <input type="checkbox" id="toggle-exhaust-flap" checked>
+                <span class="m-toggle-round"></span>
+              </label>
+            </div>
+
+            <div class="m-switch-row">
+              <div>
+                <div class="m-switch-title">Linear Throttle Mapping</div>
+                <div class="m-switch-desc">1:1 pedal to throttle response for track precision</div>
+              </div>
+              <label class="m-toggle">
+                <input type="checkbox" id="toggle-linear-throttle" checked>
+                <span class="m-toggle-round"></span>
+              </label>
+            </div>
+
+            <div style="margin-top: 1.25rem;">
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem; font-weight: 700;">ACTIVE CALIBRATION VERSION:</div>
+              <div id="current-cal-version" style="font-family: var(--font-mono); font-size: 0.9rem; color: var(--accent-cyan); font-weight: 900;">ANG_STAGE_2_93OCT</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: SAFE FLASH STATION -->
+    <div id="tab-flash" class="tab-pane">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <!-- Pre-Flash Checklist & Actions -->
+        <div class="m-panel">
+          <div class="m-panel-header">
+            <div class="m-panel-title"><i class="fas fa-shield-virus" style="color: var(--accent-green);"></i> Fail-Safe Pre-Programming Checklist</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-carbon); padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
+              <span><i class="fas fa-battery-full" style="color: var(--accent-green); margin-right: 0.6rem;"></i> Battery Voltage Stability (> 12.5V)</span>
+              <span class="m-badge m-badge-success">13.8V OK</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-carbon); padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
+              <span><i class="fas fa-network-wired" style="color: var(--bmw-m-blue); margin-right: 0.6rem;"></i> ISO 13400 DoIP Routing Channel</span>
+              <span class="m-badge m-badge-success">ACTIVE 0x0012</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-carbon); padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
+              <span><i class="fas fa-lock" style="color: var(--accent-yellow); margin-right: 0.6rem;"></i> Seed-Key Security Access Level 3</span>
+              <span class="m-badge m-badge-success">CRYPTO READY</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-carbon); padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
+              <span><i class="fas fa-floppy-disk" style="color: var(--bmw-m-blue); margin-right: 0.6rem;"></i> Full Auto-Backup EEPROM Snapshot</span>
+              <span class="m-badge m-badge-info">ENABLED</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-carbon); padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
+              <span><i class="fas fa-signature" style="color: var(--accent-green); margin-right: 0.6rem;"></i> RSA-2048 &amp; CRC32 Pre-Verification</span>
+              <span class="m-badge m-badge-success">VALIDATED</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+            <button id="btn-flash-ecu" class="btn-m-action" style="flex: 2; padding: 0.95rem; font-size: 1.05rem; justify-content: center;">
+              <i class="fas fa-bolt"></i> One-Click Safe Flash ECU
+            </button>
+            <button id="btn-test-rollback" class="btn-m-danger" style="flex: 1; padding: 0.95rem; font-size: 0.85rem; justify-content: center;" title="Tests simulated write fault to demonstrate automatic rollback">
+              <i class="fas fa-rotate-left"></i> Test Rollback Handler
+            </button>
+          </div>
+        </div>
+
+        <!-- UDS Terminal Console -->
+        <div class="m-panel">
+          <div class="m-panel-header">
+            <div class="m-panel-title"><i class="fas fa-terminal" style="color: #60a5fa;"></i> UDS Programming Terminal &amp; Audit Trail</div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 800;">
+              <span>Reflash Sequence Progress</span>
+              <span id="flash-status-text">0% - IDLE</span>
+            </div>
+            <div class="m-progress-container">
+              <div id="flash-progress-bar" class="m-progress-fill"></div>
+            </div>
+          </div>
+
+          <div id="terminal-console" class="m-terminal">
+            <div class="log-line info">[SYS] ANG Automotive Remote ECU Tuning Engine v3.4 initialized.</div>
+            <div class="log-line info">[SYS] Target DME: Bosch MEVD17.2.G (BMW S55 Engine Control Unit).</div>
+            <div class="log-line info">[SYS] Ready for diagnostic and flash operations over ISO 13400.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: AI DATALOG ANALYZER -->
+    <div id="tab-datalog" class="tab-pane">
+      <div class="m-panel">
+        <div class="m-panel-header">
+          <div class="m-panel-title"><i class="fas fa-brain" style="color: var(--accent-cyan);"></i> AI Datalog Analyzer &amp; Knock Margin Inspector</div>
+          <label class="btn-m-action btn-sm" style="cursor: pointer;">
+            <i class="fas fa-upload"></i> Upload CSV / JSON Log
+            <input type="file" id="datalog-file-input" accept=".csv,.json" style="display: none;">
+          </label>
+        </div>
+
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">
+          Upload high-frequency telematics logs (from MHD, Bootmod3, Cobb, or ANG live recorder) to execute statistical health evaluation, boost overshoot analysis, HPFP rail stability check, and one-click closed-loop AI auto-tuning.
+        </p>
+
+        <div id="datalog-report-container" style="margin-top: 1.5rem;">
+          <div style="text-align: center; padding: 2.5rem; color: var(--text-muted); border: 2px dashed var(--border-subtle); border-radius: 12px; background: var(--bg-carbon);">
+            <i class="fas fa-cloud-arrow-up" style="font-size: 2.8rem; margin-bottom: 0.75rem; color: var(--bmw-m-blue);"></i>
+            <div style="font-size: 0.95rem; font-weight: 700; color: #fff;">Drag &amp; drop your engine datalog (.csv / .json) here, or click upload above</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: HARDWARE BRIDGE & MTLS SECURITY -->
+    <div id="tab-security" class="tab-pane">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <div class="m-panel">
+          <div class="m-panel-header">
+            <div class="m-panel-title"><i class="fas fa-key" style="color: var(--accent-yellow);"></i> Hardware-Bound mTLS Certificate Generator</div>
+          </div>
+          <div class="m-form-group">
+            <label class="m-form-label">ENET / ICOM Hardware Dongle ID</label>
+            <input type="text" id="input-dongle-id" class="m-input" value="ANG-ENET-PRO-8921">
+          </div>
+          <div class="m-form-group">
+            <label class="m-form-label">Locked Vehicle VIN</label>
+            <input type="text" id="input-vin" class="m-input" value="WBA3R9C50K5A12345">
+          </div>
+          <button id="btn-generate-cert" class="btn-m-action" style="margin-top: 0.5rem;">
+            <i class="fas fa-certificate"></i> Issue X.509 Hardware Client Certificate
+          </button>
+
+          <div style="margin-top: 1.25rem;">
+            <label class="m-form-label">Client Certificate (PEM)</label>
+            <textarea id="cert-pem-display" class="m-input" style="height: 150px; font-family: var(--font-mono); font-size: 0.72rem;" readonly placeholder="Issued certificate will appear here..."></textarea>
+          </div>
+        </div>
+
+        <div class="m-panel">
+          <div class="m-panel-header">
+            <div class="m-panel-title"><i class="fas fa-network-wired" style="color: var(--bmw-m-blue);"></i> DoIP ISO 13400 Gateway Discovery</div>
+          </div>
+          <div style="background: var(--bg-carbon); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1.25rem; font-family: var(--font-mono); font-size: 0.82rem; line-height: 2.0;">
+            <div><strong>Protocol:</strong> ISO 13400-2:2019 DoIP (UDP/TCP 13400)</div>
+            <div><strong>Vehicle VIN:</strong> WBA3R9C50K5A12345</div>
+            <div><strong>Central Gateway:</strong> 0x0010 (BMW ZGW / FEM)</div>
+            <div><strong>Master DME:</strong> 0x0012 (Bosch MEVD17.2.G S55)</div>
+            <div><strong>EID (MAC):</strong> 00:1C:69:AA:BB:CC</div>
+            <div><strong>GID:</strong> 00:00:00:00:00:01</div>
+            <div><strong>Storage Engine:</strong> AES-256-GCM Encrypted SQLite</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='js/surface_3d.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/gauges.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/telemetry_chart.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/tuning_studio.js') }}"></script>
 </body>
 </html>

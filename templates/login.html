@@ -1,80 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Authorization | ANG Automotive</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
-            font-family: 'Inter', sans-serif;
-        }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-        input:focus {
-            box-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANG Automotive | BMW ///M Secure Access Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ang_telematics.css') }}">
 </head>
-<body class="flex items-center justify-center min-h-screen text-white px-4">
-
-    <div class="glass-panel w-full max-w-md p-10 rounded-3xl">
-        <div class="text-center mb-10">
-            <h1 class="text-5xl font-black italic tracking-tighter text-orange-500 mb-2">ANG</h1>
-            <p class="text-[10px] uppercase tracking-[0.4em] text-gray-500 font-bold">Encrypted Admin Access</p>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+  <div class="m-power-top-bar"></div>
+  <div class="m-panel" style="width: 100%; max-width: 440px; padding: 2.25rem;">
+    <div style="text-align: center; margin-bottom: 1.75rem;">
+      <div class="m-badge-emblem" style="margin: 0 auto 0.75rem auto;">
+        <div class="m-stripes-svg">
+          <span class="b1"></span>
+          <span class="b2"></span>
+          <span class="b3"></span>
         </div>
-
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-            {% for message in messages %}
-              <div class="bg-red-500/10 border border-red-500/50 text-red-400 text-xs p-4 rounded-xl mb-6 text-center animate-pulse">
-                {{ message }}
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-
-        <form action="/login" method="POST" class="space-y-6">
-            
-            <div>
-                <label class="block text-[10px] font-black uppercase text-gray-400 mb-2 ml-1 tracking-widest">Operator Username</label>
-                <input type="text" 
-                       name="username" 
-                       placeholder="Enter Username"
-                       required 
-                       class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl py-4 px-5 focus:outline-none focus:border-orange-500 transition-all text-white placeholder-zinc-700">
-            </div>
-
-            <div>
-                <label class="block text-[10px] font-black uppercase text-gray-400 mb-2 ml-1 tracking-widest">Security Password</label>
-                <input type="password" 
-                       name="password" 
-                       placeholder="••••••••"
-                       required 
-                       class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl py-4 px-5 focus:outline-none focus:border-orange-500 transition-all text-white placeholder-zinc-700">
-            </div>
-
-            <button type="submit" 
-                class="w-full bg-orange-600 hover:bg-orange-500 text-white font-black py-4 rounded-xl uppercase tracking-[0.2em] text-sm transition-all transform hover:scale-[1.01] active:scale-95 shadow-xl shadow-orange-900/20">
-                Initialize Login
-            </button>
-        </form>
-
-        <div class="mt-10 text-center">
-            <a href="/" class="text-gray-600 hover:text-orange-500 text-[10px] uppercase tracking-widest transition-colors">
-                &larr; Back to Showroom
-            </a>
-        </div>
+        <span class="m-letter">M</span>
+      </div>
+      <h2 style="color: #fff; font-size: 1.35rem; font-weight: 900; letter-spacing: 0.04em;">ANG AUTOMOTIVE</h2>
+      <p style="color: var(--text-secondary); font-size: 0.8rem; font-weight: 700;">ENGINEERING &amp; TELEMATICS AUTHENTICATION</p>
     </div>
 
-    <div class="fixed bottom-6 text-[10px] text-gray-700 uppercase tracking-widest">
-        &copy; 2026 ANG Performance Engineering
-    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="m-badge m-badge-danger" style="display: block; width: 100%; padding: 0.6rem; margin-bottom: 1rem; text-align: center;">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
 
+    <form method="POST" action="/login">
+      <div class="m-form-group">
+        <label class="m-form-label">Tuner Username</label>
+        <input type="text" name="username" class="m-input" required placeholder="admin" autofocus>
+      </div>
+      <div class="m-form-group">
+        <label class="m-form-label">Password / Security Key</label>
+        <input type="password" name="password" class="m-input" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn-m-action" style="width: 100%; padding: 0.85rem; margin-top: 0.75rem; justify-content: center;">
+        <i class="fas fa-lock-open"></i> Authenticate Session
+      </button>
+    </form>
+
+    <div style="text-align: center; margin-top: 1.75rem; font-size: 0.8rem;">
+      <a href="/" style="color: var(--bmw-m-blue); text-decoration: none; font-weight: 700;"><i class="fas fa-arrow-left"></i> Return to Live Cockpit</a>
+    </div>
+  </div>
 </body>
 </html>
