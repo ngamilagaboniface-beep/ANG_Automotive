@@ -34,9 +34,13 @@ class TelemetryOscilloscope {
 
   _resizeCanvas() {
     if (!this.canvas) return;
-    const rect = this.canvas.parentElement.getBoundingClientRect();
-    this.canvas.width = rect.width * window.devicePixelRatio || 900;
-    this.canvas.height = (rect.height || 260) * window.devicePixelRatio;
+    const parent = this.canvas.parentElement;
+    const rect = parent ? parent.getBoundingClientRect() : { width: 800, height: 260 };
+    const dpr = window.devicePixelRatio || 1;
+    const w = (rect.width > 20) ? rect.width : 800;
+    const h = (rect.height > 20) ? rect.height : 260;
+    this.canvas.width = w * dpr;
+    this.canvas.height = h * dpr;
     this.render();
   }
 
@@ -68,6 +72,8 @@ class TelemetryOscilloscope {
     const ctx = this.ctx;
     const w = this.canvas.width;
     const h = this.canvas.height;
+    if (w <= 0 || h <= 0) return;
+    const dpr = window.devicePixelRatio || 1;
 
     ctx.clearRect(0, 0, w, h);
 
@@ -77,7 +83,7 @@ class TelemetryOscilloscope {
 
     // Grid Lines
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.lineWidth = 1 * window.devicePixelRatio;
+    ctx.lineWidth = 1 * dpr;
     for (let y = 0; y <= 4; y++) {
       const gy = (h / 4) * y;
       ctx.beginPath();
@@ -102,16 +108,16 @@ class TelemetryOscilloscope {
     if (this.activeChannels.boost) {
       // Boost Target (Dashed Blue)
       ctx.beginPath();
-      ctx.setLineDash([4 * window.devicePixelRatio, 4 * window.devicePixelRatio]);
+      ctx.setLineDash([4 * dpr, 4 * dpr]);
       for (let i = 0; i < n; i++) {
         const val = this.history.boost_target[i];
         const norm = Math.max(0, Math.min(1, (val + 5) / 35));
-        const py = h - norm * (h - 20 * window.devicePixelRatio) - 10 * window.devicePixelRatio;
+        const py = h - norm * (h - 20 * dpr) - 10 * dpr;
         if (i === 0) ctx.moveTo(getX(i), py);
         else ctx.lineTo(getX(i), py);
       }
       ctx.strokeStyle = 'rgba(0, 229, 255, 0.5)';
-      ctx.lineWidth = 1.5 * window.devicePixelRatio;
+      ctx.lineWidth = 1.5 * dpr;
       ctx.stroke();
       ctx.setLineDash([]);
 
@@ -120,12 +126,12 @@ class TelemetryOscilloscope {
       for (let i = 0; i < n; i++) {
         const val = this.history.boost_actual[i];
         const norm = Math.max(0, Math.min(1, (val + 5) / 35));
-        const py = h - norm * (h - 20 * window.devicePixelRatio) - 10 * window.devicePixelRatio;
+        const py = h - norm * (h - 20 * dpr) - 10 * dpr;
         if (i === 0) ctx.moveTo(getX(i), py);
         else ctx.lineTo(getX(i), py);
       }
       ctx.strokeStyle = '#00e5ff';
-      ctx.lineWidth = 2.5 * window.devicePixelRatio;
+      ctx.lineWidth = 2.5 * dpr;
       ctx.shadowColor = '#00e5ff';
       ctx.shadowBlur = 6;
       ctx.stroke();
@@ -138,12 +144,12 @@ class TelemetryOscilloscope {
       for (let i = 0; i < n; i++) {
         const val = this.history.rpm[i];
         const norm = Math.max(0, Math.min(1, val / 8000));
-        const py = h - norm * (h - 20 * window.devicePixelRatio) - 10 * window.devicePixelRatio;
+        const py = h - norm * (h - 20 * dpr) - 10 * dpr;
         if (i === 0) ctx.moveTo(getX(i), py);
         else ctx.lineTo(getX(i), py);
       }
       ctx.strokeStyle = '#ffd600';
-      ctx.lineWidth = 2.0 * window.devicePixelRatio;
+      ctx.lineWidth = 2.0 * dpr;
       ctx.stroke();
     }
 
@@ -153,12 +159,12 @@ class TelemetryOscilloscope {
       for (let i = 0; i < n; i++) {
         const val = this.history.afr_actual[i];
         const norm = Math.max(0, Math.min(1, (val - 10) / 8));
-        const py = h - norm * (h - 20 * window.devicePixelRatio) - 10 * window.devicePixelRatio;
+        const py = h - norm * (h - 20 * dpr) - 10 * dpr;
         if (i === 0) ctx.moveTo(getX(i), py);
         else ctx.lineTo(getX(i), py);
       }
       ctx.strokeStyle = '#00e676';
-      ctx.lineWidth = 2.0 * window.devicePixelRatio;
+      ctx.lineWidth = 2.0 * dpr;
       ctx.stroke();
     }
 
@@ -168,12 +174,12 @@ class TelemetryOscilloscope {
       for (let i = 0; i < n; i++) {
         const val = this.history.knock_max[i];
         const norm = Math.max(0, Math.min(1, val / 6.0));
-        const py = h - norm * (h - 20 * window.devicePixelRatio) - 10 * window.devicePixelRatio;
+        const py = h - norm * (h - 20 * dpr) - 10 * dpr;
         if (i === 0) ctx.moveTo(getX(i), py);
         else ctx.lineTo(getX(i), py);
       }
       ctx.strokeStyle = '#e60000';
-      ctx.lineWidth = 2.5 * window.devicePixelRatio;
+      ctx.lineWidth = 2.5 * dpr;
       ctx.shadowColor = '#e60000';
       ctx.shadowBlur = 8;
       ctx.stroke();

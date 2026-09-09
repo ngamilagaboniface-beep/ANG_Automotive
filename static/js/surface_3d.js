@@ -23,6 +23,7 @@ class SurfaceVisualizer3D {
     
     this.selectedCell = { x: 0, y: 0 };
     this.onCellSelectedCallback = null;
+    this.projectedPoints = [];
     
     this._initEvents();
     this._resizeCanvas();
@@ -31,13 +32,20 @@ class SurfaceVisualizer3D {
 
   _resizeCanvas() {
     if (!this.canvas) return;
-    const rect = this.canvas.parentElement.getBoundingClientRect();
-    this.canvas.width = rect.width * window.devicePixelRatio || 800;
-    this.canvas.height = (rect.height || 520) * window.devicePixelRatio;
+    const parent = this.canvas.parentElement;
+    const rect = parent ? parent.getBoundingClientRect() : { width: 800, height: 520 };
+    const w = (rect.width > 50) ? rect.width : 800;
+    const h = (rect.height > 50) ? rect.height : 520;
+    const dpr = window.devicePixelRatio || 1;
+    
+    this.canvas.width = w * dpr;
+    this.canvas.height = h * dpr;
     this.render();
   }
 
   _initEvents() {
+    if (!this.canvas) return;
+
     this.canvas.addEventListener('mousedown', (e) => {
       this.isDragging = (e.button === 0 && !e.shiftKey);
       this.isPanning = (e.button === 2 || (e.button === 0 && e.shiftKey));
@@ -80,8 +88,8 @@ class SurfaceVisualizer3D {
     this.canvas.addEventListener('click', (e) => {
       if (!this.tableData) return;
       const rect = this.canvas.getBoundingClientRect();
-      const clickX = (e.clientX - rect.left) * window.devicePixelRatio;
-      const clickY = (e.clientY - rect.top) * window.devicePixelRatio;
+      const clickX = (e.clientX - rect.left) * (window.devicePixelRatio || 1);
+      const clickY = (e.clientY - rect.top) * (window.devicePixelRatio || 1);
       this._pickCell(clickX, clickY);
     });
   }
@@ -92,7 +100,7 @@ class SurfaceVisualizer3D {
   }
 
   _pickCell(px, py) {
-    if (!this.tableData || !this.projectedPoints) return;
+    if (!this.tableData || !this.projectedPoints || this.projectedPoints.length === 0) return;
     let closestDist = Infinity;
     let closestCoord = null;
 
@@ -100,10 +108,12 @@ class SurfaceVisualizer3D {
     const nx = this.tableData.matrix[0].length;
 
     for (let y = 0; y < ny; y++) {
+      if (!this.projectedPoints[y]) continue;
       for (let x = 0; x < nx; x++) {
         const pt = this.projectedPoints[y][x];
+        if (!pt) continue;
         const dist = Math.hypot(pt.x - px, pt.y - py);
-        if (dist < closestDist && dist < 40 * window.devicePixelRatio) {
+        if (dist < closestDist && dist < 50 * (window.devicePixelRatio || 1)) {
           closestDist = dist;
           closestCoord = { x, y };
         }
@@ -120,7 +130,6 @@ class SurfaceVisualizer3D {
   }
 
   _getColor(normVal) {
-    // Jet / Turbo Heat Colormap (0.0 Blue -> 0.25 Cyan -> 0.5 Green -> 0.75 Yellow -> 1.0 Red)
     const v = Math.max(0, Math.min(1, normVal));
     let r = 0, g = 0, b = 0;
 
@@ -145,10 +154,11 @@ class SurfaceVisualizer3D {
   }
 
   render() {
-    if (!this.ctx || !this.tableData) return;
+    if (!this.ctx || !this.tableData || !this.canvas) return;
     const ctx = this.ctx;
     const w = this.canvas.width;
     const h = this.canvas.height;
+    if (w <= 0 || h <= 0) return;
 
     ctx.clearRect(0, 0, w, h);
 
@@ -160,6 +170,7 @@ class SurfaceVisualizer3D {
     ctx.fillRect(0, 0, w, h);
 
     const matrix = this.tableData.matrix;
+    if (!matrix || matrix.length === 0) return;
     const ny = matrix.length;
     const nx = matrix[0].length;
 
@@ -174,29 +185,25 @@ class SurfaceVisualizer3D {
     }
     if (minZ === maxZ) maxZ += 1.0;
 
-    // Center & Projection Transform
+    const dpr = window.devicePixelRatio || 1;
     const cx = w / 2 + this.panX;
-    const cy = h / 2 + this.panY + 40 * window.devicePixelRatio;
+    const cy = h / 2 + this.panY + 40 * dpr;
     const scale = Math.min(w, h) * 0.38 * this.zoom;
 
     const cosX = Math.cos(this.rotX), sinX = Math.sin(this.rotX);
     const cosY = Math.cos(this.rotY), sinY = Math.sin(this.rotY);
 
     const project = (xNorm, yNorm, zNorm) => {
-      // 3D coordinates in [-1, 1]
       const px = (xNorm - 0.5) * 2.0;
       const pz = (yNorm - 0.5) * 2.0;
       const py = -(zNorm - 0.5) * 1.6;
 
-      // Yaw rotation (Y axis)
       const x1 = px * cosY + pz * sinY;
       const z1 = -px * sinY + pz * cosY;
 
-      // Pitch rotation (X axis)
       const y2 = py * cosX - z1 * sinX;
       const z2 = py * sinX + z1 * cosX;
 
-      // Perspective projection
       const cameraDist = 4.0;
       const fov = cameraDist / (cameraDist + z2);
 
@@ -211,9 +218,9 @@ class SurfaceVisualizer3D {
     this.projectedPoints = [];
     for (let r = 0; r < ny; r++) {
       const rowPts = [];
-      const yNorm = r / (ny - 1);
+      const yNorm = ny > 1 ? (r / (ny - 1)) : 0.5;
       for (let c = 0; c < nx; c++) {
-        const xNorm = c / (nx - 1);
+        const xNorm = nx > 1 ? (c / (nx - 1)) : 0.5;
         const zNorm = (matrix[r][c] - minZ) / (maxZ - minZ);
         rowPts.push(project(xNorm, yNorm, zNorm));
       }
@@ -243,7 +250,7 @@ class SurfaceVisualizer3D {
       }
     }
 
-    // Sort polygons back-to-front (Painter's Algorithm)
+    // Sort polygons back-to-front
     polygons.sort((a, b) => b.depth - a.depth);
 
     // Draw Surface Polygons & Wireframe
@@ -260,7 +267,7 @@ class SurfaceVisualizer3D {
 
       // Wireframe overlay
       ctx.strokeStyle = poly.isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.22)';
-      ctx.lineWidth = (poly.isSelected ? 2.5 : 1.0) * window.devicePixelRatio;
+      ctx.lineWidth = (poly.isSelected ? 2.5 : 1.0) * dpr;
       ctx.stroke();
 
       if (poly.isSelected) {
@@ -270,25 +277,25 @@ class SurfaceVisualizer3D {
     }
 
     // Draw Selected Point Highlight
-    if (this.selectedCell && this.projectedPoints[this.selectedCell.y]) {
+    if (this.selectedCell && this.projectedPoints[this.selectedCell.y] && this.projectedPoints[this.selectedCell.y][this.selectedCell.x]) {
       const pt = this.projectedPoints[this.selectedCell.y][this.selectedCell.x];
       ctx.beginPath();
-      ctx.arc(pt.x, pt.y, 6 * window.devicePixelRatio, 0, Math.PI * 2);
+      ctx.arc(pt.x, pt.y, 6 * dpr, 0, Math.PI * 2);
       ctx.fillStyle = '#00e5ff';
       ctx.shadowColor = '#00e5ff';
       ctx.shadowBlur = 12;
       ctx.fill();
       ctx.shadowBlur = 0;
       ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2 * window.devicePixelRatio;
+      ctx.lineWidth = 2 * dpr;
       ctx.stroke();
     }
 
     // Draw Info Overlays
     ctx.fillStyle = '#94a3b8';
-    ctx.font = `${11 * window.devicePixelRatio}px Inter, sans-serif`;
-    ctx.fillText(`Map: ${this.tableData.name} (${this.tableData.unit})`, 16 * window.devicePixelRatio, 24 * window.devicePixelRatio);
-    ctx.fillText(`Range: ${minZ.toFixed(1)} - ${maxZ.toFixed(1)} ${this.tableData.unit}`, 16 * window.devicePixelRatio, 40 * window.devicePixelRatio);
+    ctx.font = `${11 * dpr}px Inter, sans-serif`;
+    ctx.fillText(`Map: ${this.tableData.name} (${this.tableData.unit})`, 16 * dpr, 24 * dpr);
+    ctx.fillText(`Range: ${minZ.toFixed(1)} - ${maxZ.toFixed(1)} ${this.tableData.unit}`, 16 * dpr, 40 * dpr);
   }
 }
 

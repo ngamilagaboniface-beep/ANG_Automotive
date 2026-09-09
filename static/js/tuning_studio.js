@@ -3,13 +3,39 @@
  * Full integration of WebGL 3D maps, 50Hz gauges, UDS flashing pipeline, AI datalog analysis, and security.
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialize Gauges, Oscilloscope, and 3D Surface Visualizer
-  const gauges = new TelematicsGauges();
-  const oscilloscope = new TelemetryOscilloscope('telemetry-canvas');
-  const surface3D = new SurfaceVisualizer3D('webgl-surface-canvas');
+function initTuningStudio() {
+  console.log('[ANG Studio] Initializing BMW ECU Tuning Studio...');
 
-  // State
+  // 1. Initialize Visualizers & Gauges safely
+  let gauges = null;
+  let oscilloscope = null;
+  let surface3D = null;
+
+  try {
+    if (typeof TelematicsGauges === 'function') {
+      gauges = new TelematicsGauges();
+    }
+  } catch (e) {
+    console.warn('[ANG Studio] Gauges init warning:', e);
+  }
+
+  try {
+    if (typeof TelemetryOscilloscope === 'function') {
+      oscilloscope = new TelemetryOscilloscope('telemetry-canvas');
+    }
+  } catch (e) {
+    console.warn('[ANG Studio] Oscilloscope init warning:', e);
+  }
+
+  try {
+    if (typeof SurfaceVisualizer3D === 'function') {
+      surface3D = new SurfaceVisualizer3D('webgl-surface-canvas');
+    }
+  } catch (e) {
+    console.warn('[ANG Studio] 3D Visualizer init warning:', e);
+  }
+
+  // State Variables
   let activeRomData = null;
   let activeTableName = 'ignition_timing';
   let isFlashing = false;
@@ -36,23 +62,51 @@ document.addEventListener('DOMContentLoaded', () => {
   const flashStatusText = document.getElementById('flash-status-text');
   const terminalConsole = document.getElementById('terminal-console');
 
-  // Tab Navigation Handler
+  // Terminal Logger Helper
+  function logTerminal(msg, level = 'info') {
+    if (!terminalConsole) return;
+    const p = document.createElement('div');
+    p.className = `log-line ${level}`;
+    const time = new Date().toTimeString().split(' ')[0];
+    p.textContent = `[${time}] ${msg}`;
+    terminalConsole.appendChild(p);
+    terminalConsole.scrollTop = terminalConsole.scrollHeight;
+  }
+
+  // Tab Navigation Helper
+  function switchTab(targetTab) {
+    console.log('[ANG Studio] Switching to tab:', targetTab);
+    tabButtons.forEach(b => {
+      if (b.getAttribute('data-tab') === targetTab) {
+        b.classList.add('active');
+      } else if (b.getAttribute('data-tab')) {
+        b.classList.remove('active');
+      }
+    });
+
+    tabPanes.forEach(p => {
+      if (p.id === `tab-${targetTab}`) {
+        p.classList.add('active');
+      } else {
+        p.classList.remove('active');
+      }
+    });
+
+    if (targetTab === 'maps' && surface3D) {
+      setTimeout(() => {
+        surface3D._resizeCanvas();
+        surface3D.render();
+      }, 80);
+    }
+  }
+
+  // Attach Tab Button Listeners
   tabButtons.forEach(btn => {
     btn.addEventListener('click', (e) => {
       const targetTab = btn.getAttribute('data-tab');
-      if (!targetTab) return; // standard href link
+      if (!targetTab) return; // Standard anchor links
       e.preventDefault();
-      tabButtons.forEach(b => {
-        if (b.getAttribute('data-tab')) b.classList.remove('active');
-      });
-      tabPanes.forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      const pane = document.getElementById(`tab-${targetTab}`);
-      if (pane) pane.classList.add('active');
-
-      if (targetTab === 'maps' && surface3D) {
-        setTimeout(() => surface3D._resizeCanvas(), 60);
-      }
+      switchTab(targetTab);
     });
   });
 
@@ -61,17 +115,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnM2 = document.getElementById('btn-m2-mode');
 
   if (btnM1) {
-    btnM1.addEventListener('click', async () => {
-      btnM1.classList.toggle('active-m1');
-      if (btnM2) btnM2.classList.remove('active-m2');
-      if (btnM1.classList.contains('active-m1')) {
-        logTerminal(`[M DRIVE] M1 SPORT PLUS ACTIVATED: Stage 2 93 Octane, Active Flaps OPEN, Linear Throttle ON.`, 'info');
+    btnM1.addEventListener('click', (e) => {
+      e.preventDefault();
+      btnM1.classList.toggle('m1-active');
+      if (btnM2) btnM2.classList.remove('m2-active');
+      if (btnM1.classList.contains('m1-active')) {
+        logTerminal('M1 SPORT+ MODE ENGAGED: Stage 2 93 Octane, Active Flaps OPEN, Linear Throttle ON.', 'info');
         if (stagePresetSelect) {
           stagePresetSelect.value = 'STAGE_2';
           stagePresetSelect.dispatchEvent(new Event('change'));
         }
       } else {
-        logTerminal(`[M DRIVE] COMFORT MODE: OEM Baseline.`, 'info');
+        logTerminal('COMFORT MODE: Reverting to OEM Baseline calibration profile.', 'info');
         if (stagePresetSelect) {
           stagePresetSelect.value = 'STOCK';
           stagePresetSelect.dispatchEvent(new Event('change'));
@@ -81,17 +136,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (btnM2) {
-    btnM2.addEventListener('click', async () => {
-      btnM2.classList.toggle('active-m2');
-      if (btnM1) btnM1.classList.remove('active-m1');
-      if (btnM2.classList.contains('active-m2')) {
-        logTerminal(`[M DRIVE] M2 TRACK / E85 KILL MAP ACTIVATED: Stage 2+ E85, +4.5° Timing, Max Boost 22.5 PSI, GTS Overrun!`, 'warn');
+    btnM2.addEventListener('click', (e) => {
+      e.preventDefault();
+      btnM2.classList.toggle('m2-active');
+      if (btnM1) btnM1.classList.remove('m1-active');
+      if (btnM2.classList.contains('m2-active')) {
+        logTerminal('M2 TRACK ATTACK MODE ENGAGED: Stage 2+ E85 Flex Fuel, +4.5° Timing, Max Boost 22.5 PSI, GTS Overrun!', 'warn');
         if (stagePresetSelect) {
           stagePresetSelect.value = 'STAGE_2_E85';
           stagePresetSelect.dispatchEvent(new Event('change'));
         }
       } else {
-        logTerminal(`[M DRIVE] COMFORT MODE: OEM Baseline.`, 'info');
+        logTerminal('COMFORT MODE: Reverting to OEM Baseline calibration profile.', 'info');
         if (stagePresetSelect) {
           stagePresetSelect.value = 'STOCK';
           stagePresetSelect.dispatchEvent(new Event('change'));
@@ -104,11 +160,13 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadCalibrationRom() {
     try {
       const res = await fetch('/api/ecu/rom');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       activeRomData = data;
       populateTableSelector();
       loadActiveTable();
       updateCustomizationUI();
+      logTerminal('Bosch MEVD17.2.G ROM calibration tables successfully synchronized over DoIP.', 'info');
     } catch (err) {
       console.error('Failed to load ECU ROM:', err);
       logTerminal(`Error loading ECU calibration: ${err.message}`, 'error');
@@ -148,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('table-grid-container');
     if (!container) return;
 
-    let html = `<table class="table-matrix"><thead><tr><th>Load / RPM</th>`;
+    let html = `<table class="cal-table-grid"><thead><tr><th>Load / RPM</th>`;
     tbl.x_axis.forEach(x => {
       html += `<th>${x.toFixed(0)}</th>`;
     });
@@ -158,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const yVal = tbl.y_axis[yIdx];
       html += `<tr><th>${yVal.toFixed(0)}</th>`;
       row.forEach((val, xIdx) => {
-        const isSel = (surface3D.selectedCell.x === xIdx && surface3D.selectedCell.y === yIdx);
+        const isSel = surface3D && (surface3D.selectedCell.x === xIdx && surface3D.selectedCell.y === yIdx);
         html += `<td class="cal-cell ${isSel ? 'selected' : ''}" data-x="${xIdx}" data-y="${yIdx}">${val.toFixed(tbl.unit === 'Lambda' ? 3 : 1)}</td>`;
       });
       html += `</tr>`;
@@ -171,12 +229,16 @@ document.addEventListener('DOMContentLoaded', () => {
       cell.addEventListener('click', () => {
         const x = parseInt(cell.getAttribute('data-x'));
         const y = parseInt(cell.getAttribute('data-y'));
-        surface3D.selectedCell = { x, y };
-        surface3D.render();
+        if (surface3D) {
+          surface3D.selectedCell = { x, y };
+          surface3D.render();
+        }
         container.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
         cell.classList.add('selected');
         const input = document.getElementById('selected-cell-val');
-        if (input) input.value = tbl.matrix[y][x];
+        if (input && tbl.matrix[y]) {
+          input.value = tbl.matrix[y][x];
+        }
       });
     });
   }
@@ -198,23 +260,28 @@ document.addEventListener('DOMContentLoaded', () => {
   // Edit Single Selected Cell
   const applyCellBtn = document.getElementById('btn-apply-cell');
   if (applyCellBtn) {
-    applyCellBtn.addEventListener('click', () => {
+    applyCellBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       if (!activeRomData || !activeRomData.tables) return;
       const tbl = activeRomData.tables[activeTableName];
       const cellInput = document.getElementById('selected-cell-val');
       const newVal = parseFloat(cellInput ? cellInput.value : NaN);
       if (isNaN(newVal)) return;
 
-      const { x, y } = surface3D.selectedCell;
-      tbl.matrix[y][x] = newVal;
-      surface3D.setData(tbl);
-      render2DTableEditor(tbl);
+      const { x, y } = (surface3D ? surface3D.selectedCell : { x: 0, y: 0 });
+      if (tbl.matrix[y] && tbl.matrix[y][x] !== undefined) {
+        tbl.matrix[y][x] = newVal;
+        if (surface3D) surface3D.setData(tbl);
+        render2DTableEditor(tbl);
+        logTerminal(`Updated table cell [${x}, ${y}] in ${tbl.name} to ${newVal}`, 'info');
+      }
     });
   }
 
   // Bulk Table Offset (+0.5 / -0.5)
   document.querySelectorAll('.btn-table-offset').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
       if (!activeRomData || !activeRomData.tables) return;
       const tbl = activeRomData.tables[activeTableName];
       const delta = parseFloat(btn.getAttribute('data-delta'));
@@ -223,8 +290,9 @@ document.addEventListener('DOMContentLoaded', () => {
           tbl.matrix[y][x] = Math.round((val + delta) * 10) / 10;
         });
       });
-      surface3D.setData(tbl);
+      if (surface3D) surface3D.setData(tbl);
       render2DTableEditor(tbl);
+      logTerminal(`Applied bulk offset of ${delta > 0 ? '+' : ''}${delta} to ${tbl.name}`, 'info');
     });
   });
 
@@ -259,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeRomData = data;
         loadActiveTable();
         updateCustomizationUI();
-        logTerminal(`Profile ${stage} successfully synthesized & loaded into workspace.`, 'success');
+        logTerminal(`Profile ${stage} successfully synthesized & loaded into memory.`, 'success');
       } catch (err) {
         logTerminal(`Error applying stage preset: ${err.message}`, 'error');
       }
@@ -286,10 +354,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 4. Safe ECU Flashing Pipeline Execution
   if (flashBtn) {
-    flashBtn.addEventListener('click', () => executeFlashingSequence(false));
+    flashBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      executeFlashingSequence(false);
+    });
   }
   if (rollbackTestBtn) {
-    rollbackTestBtn.addEventListener('click', () => executeFlashingSequence(true));
+    rollbackTestBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      executeFlashingSequence(true);
+    });
   }
 
   async function executeFlashingSequence(simulateFault) {
@@ -298,9 +372,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (flashBtn) flashBtn.disabled = true;
     if (rollbackTestBtn) rollbackTestBtn.disabled = true;
 
+    setFlashProgress(10, 'PRE-CHECK: VALIDATING VOLTAGE & SEED-KEY...');
     logTerminal(`====================================================`, 'info');
     logTerminal(`INITIATING UDS ISO 14229 OVER DoIP ISO 13400 FLASHING`, 'info');
-    logTerminal(`Simulate Fault Mode: ${simulateFault ? 'YES (TRANSFER_DATA FAILURE)' : 'NO (PRODUCTION RUN)'}`, simulateFault ? 'warn' : 'info');
+    logTerminal(`Mode: ${simulateFault ? 'TEST SIMULATED WRITE FAULT & ROLLBACK' : 'PRODUCTION CALIBRATION WRITE'}`, simulateFault ? 'warn' : 'info');
     logTerminal(`====================================================`, 'info');
 
     try {
@@ -310,6 +385,8 @@ document.addEventListener('DOMContentLoaded', () => {
         battery_voltage: 13.8
       };
 
+      setFlashProgress(35, 'CREATING FULL EEPROM FLASH SNAPSHOT...');
+      
       const res = await fetch('/api/ecu/flash', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -343,15 +420,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (flashStatusText) flashStatusText.textContent = `${pct}% - ${statusText}`;
   }
 
-  function logTerminal(msg, level = 'info') {
-    if (!terminalConsole) return;
-    const p = document.createElement('div');
-    p.className = `log-line ${level}`;
-    p.textContent = msg;
-    terminalConsole.appendChild(p);
-    terminalConsole.scrollTop = terminalConsole.scrollHeight;
-  }
-
   // 5. 50Hz Live Telematics Streaming Loop
   async function pollLiveTelemetry() {
     try {
@@ -360,8 +428,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const snap = await res.json();
 
         // Update gauges & oscilloscope
-        gauges.update(snap);
-        oscilloscope.addPoint(snap);
+        if (gauges) gauges.update(snap);
+        if (oscilloscope) oscilloscope.addPoint(snap);
 
         // Update Digital Readout Badges
         const setTxt = (id, val) => {
@@ -386,7 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       // transient network poll error
     } finally {
-      setTimeout(pollLiveTelemetry, 100); // 10Hz browser UI poll rate (backend computes at 50Hz)
+      setTimeout(pollLiveTelemetry, 100);
     }
   }
 
@@ -409,24 +477,29 @@ document.addEventListener('DOMContentLoaded', () => {
   const readDtcBtn = document.getElementById('btn-read-dtc');
   const clearDtcBtn = document.getElementById('btn-clear-dtc');
   if (readDtcBtn) {
-    readDtcBtn.addEventListener('click', async () => {
+    readDtcBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
       try {
+        logTerminal('Scanning active ECU fault memory over DoIP (ISO 14229 Service 0x19)...', 'info');
         const res = await fetch('/api/dtc/read');
         const data = await res.json();
         renderDtcList(data.dtcs || []);
+        logTerminal(`DTC Scan complete: ${data.dtcs ? data.dtcs.length : 0} fault codes detected.`, 'info');
       } catch (err) {
-        console.error('Failed to read DTCs:', err);
+        logTerminal(`DTC Scan failed: ${err.message}`, 'error');
       }
     });
   }
   if (clearDtcBtn) {
-    clearDtcBtn.addEventListener('click', async () => {
+    clearDtcBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
       try {
+        logTerminal('Sending Clear Diagnostic Information command (ISO 14229 Service 0x14 0xFFFFFF)...', 'warn');
         await fetch('/api/dtc/clear', { method: 'POST' });
         renderDtcList([]);
-        logTerminal('DTC memory cleared across all control units.', 'success');
+        logTerminal('All ECU diagnostic fault codes cleared successfully.', 'success');
       } catch (err) {
-        console.error('Failed to clear DTCs:', err);
+        logTerminal(`Failed to clear DTCs: ${err.message}`, 'error');
       }
     });
   }
@@ -447,23 +520,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 7. AI Datalog Analysis & File Upload
   const datalogUpload = document.getElementById('datalog-file-input');
+  const sampleDatalogBtn = document.getElementById('btn-load-sample-datalog');
+
   if (datalogUpload) {
     datalogUpload.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
+      logTerminal(`Reading uploaded datalog file: ${file.name}...`, 'info');
       const text = await file.text();
-      try {
-        const res = await fetch('/api/datalog/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ csv_content: text })
-        });
-        const report = await res.json();
-        renderDatalogReport(report);
-      } catch (err) {
-        console.error('Datalog analysis failed:', err);
-      }
+      analyzeDatalogContent(text);
     });
+  }
+
+  if (sampleDatalogBtn) {
+    sampleDatalogBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      logTerminal('Loading BMW S55 Twin-Turbo WOT Dyno Sample Telematics Datalog...', 'info');
+      const sampleCsv = `RPM,Pedal,Boost Target,Actual Boost,Lambda,Lambda Target,Timing,Knock Retard,WGDC,Coolant Temp,Oil Temp,EGT,HPFP,Ethanol
+2500,60,1500,1480,0.95,0.92,18.0,0.0,35,90,92,560,200,10
+3000,90,1800,1790,0.88,0.86,16.5,0.0,52,90,93,620,200,10
+4000,100,2250,2220,0.84,0.82,14.0,0.0,68,91,95,710,195,10
+5000,100,2300,2280,0.82,0.80,12.5,0.0,72,92,97,780,190,10
+6000,100,2200,2190,0.80,0.80,11.5,0.5,75,93,99,840,188,10
+6800,100,2000,2010,0.78,0.78,10.0,1.2,74,94,101,890,185,10
+7200,100,1850,1860,0.77,0.77,9.5,0.0,70,95,102,910,182,10`;
+      analyzeDatalogContent(sampleCsv);
+    });
+  }
+
+  async function analyzeDatalogContent(csvText) {
+    try {
+      logTerminal('Running AI Datalog Analysis: checking knock margins, boost overshoot, lambda trims, and HPFP rail pressure...', 'info');
+      const res = await fetch('/api/datalog/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ csv_content: csvText })
+      });
+      const report = await res.json();
+      renderDatalogReport(report);
+      logTerminal(`AI Datalog Analysis completed with ${report.recommendations ? report.recommendations.length : 0} diagnostic insights.`, 'success');
+    } catch (err) {
+      logTerminal(`Datalog analysis failed: ${err.message}`, 'error');
+    }
   }
 
   function renderDatalogReport(report) {
@@ -496,8 +594,10 @@ document.addEventListener('DOMContentLoaded', () => {
       <button id="btn-apply-ai-tune" class="btn-m-action" style="margin-top: 0.75rem;"><i class="fas fa-magic"></i> Auto-Apply AI Timing & Boost Optimizations</button>
     `;
 
-    document.getElementById('btn-apply-ai-tune')?.addEventListener('click', async () => {
+    document.getElementById('btn-apply-ai-tune')?.addEventListener('click', async (e) => {
+      e.preventDefault();
       try {
+        logTerminal('Synthesizing closed-loop AI map calibrations...', 'info');
         const res = await fetch('/api/ecu/autotune', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -517,17 +617,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // 8. Hardware Bridge & mTLS Certificate Tool
   const genCertBtn = document.getElementById('btn-generate-cert');
   if (genCertBtn) {
-    genCertBtn.addEventListener('click', async () => {
-      const dongleId = document.getElementById('input-dongle-id').value || 'ANG-ENET-PRO-8921';
-      const vin = document.getElementById('input-vin').value || 'WBA3R9C50K5A12345';
+    genCertBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const dongleId = document.getElementById('input-dongle-id')?.value || 'ANG-ENET-PRO-8921';
+      const vin = document.getElementById('input-vin')?.value || 'WBA3R9C50K5A12345';
       try {
+        logTerminal(`Issuing hardware-bound X.509 mTLS Certificate for dongle ${dongleId}...`, 'info');
         const res = await fetch('/api/security/issue_cert', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ dongle_id: dongleId, vin: vin, role: currentRole })
         });
         const creds = await res.json();
-        document.getElementById('cert-pem-display').value = creds.client_certificate_pem;
+        const certDisplay = document.getElementById('cert-pem-display');
+        if (certDisplay) certDisplay.value = creds.client_certificate_pem;
         logTerminal(`mTLS X.509 Client Certificate successfully issued for Hardware Dongle ${dongleId} (VIN: ${vin}).`, 'success');
       } catch (err) {
         logTerminal(`Failed to issue certificate: ${err.message}`, 'error');
@@ -538,4 +641,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initial Load & Start Polling
   loadCalibrationRom();
   pollLiveTelemetry();
-});
+}
+
+// Ensure init executes reliably regardless of script load timing
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initTuningStudio);
+} else {
+  initTuningStudio();
+}

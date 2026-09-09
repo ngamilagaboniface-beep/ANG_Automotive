@@ -56,11 +56,11 @@
       <button id="btn-m1-mode" class="btn-m-drive" title="M1 Mode: Sport+ Throttle & Stage 2 93 Octane"><i class="fas fa-bolt" style="color: var(--bmw-m-red);"></i> M1</button>
       <button id="btn-m2-mode" class="btn-m-drive" title="M2 Mode: Track Attack Stage 2+ E85 Kill Map"><i class="fas fa-fire" style="color: var(--bmw-m-blue);"></i> M2</button>
 
-      <div class="status-indicator">
-        <span class="pulse-dot"></span>
-        <span>DoIP ISO 13400: CONNECTED</span>
+      <div class="status-indicator" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-family: var(--font-mono); color: var(--accent-green); background: #0c121d; padding: 0.4rem 0.8rem; border-radius: 6px; border: 1px solid var(--border-subtle);">
+        <span class="pulse-dot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); display: inline-block;"></span>
+        <span>DoIP: 13400 ONLINE</span>
       </div>
-      <div class="status-indicator">
+      <div class="status-indicator" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-family: var(--font-mono); color: #fff; background: #0c121d; padding: 0.4rem 0.8rem; border-radius: 6px; border: 1px solid var(--border-subtle);">
         <i class="fas fa-car-battery" style="color: var(--accent-green);"></i>
         <span id="header-battery-val">13.8V</span>
       </div>
@@ -178,14 +178,18 @@
             </div>
           </div>
           <div id="dtc-results-list" class="dtc-list">
-            <div class="dtc-item">
-              <div class="dtc-code">120308</div>
-              <div class="dtc-desc">Charging pressure control: Pressure too low (Sporadic)</div>
+            <div class="dtc-item" style="background: var(--bg-carbon); border: 1px solid var(--border-subtle); padding: 0.75rem; border-radius: 6px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-family: var(--font-mono); font-weight: 800; color: #fff;">120308</div>
+                <div style="font-size: 0.78rem; color: var(--text-secondary);">Charging pressure control: Pressure too low (Sporadic)</div>
+              </div>
               <span class="m-badge m-badge-warning">ACTIVE</span>
             </div>
-            <div class="dtc-item">
-              <div class="dtc-code">138104</div>
-              <div class="dtc-desc">Exhaust flap sport mode: Open position active</div>
+            <div class="dtc-item" style="background: var(--bg-carbon); border: 1px solid var(--border-subtle); padding: 0.75rem; border-radius: 6px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-family: var(--font-mono); font-weight: 800; color: #fff;">138104</div>
+                <div style="font-size: 0.78rem; color: var(--text-secondary);">Exhaust flap sport mode: Open position active</div>
+              </div>
               <span class="m-badge m-badge-info">INFO</span>
             </div>
           </div>
@@ -219,7 +223,7 @@
             </div>
             <div class="m-overlay-legend">
               <span style="color: #60a5fa;">Low</span>
-              <div class="legend-bar"></div>
+              <div class="legend-bar" style="width: 70px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #0066b1, #00e5ff, #00e676, #ffd600, #e60000); margin: 0 0.4rem;"></div>
               <span style="color: var(--bmw-m-red);">Peak</span>
             </div>
           </div>
@@ -389,7 +393,7 @@
           </div>
 
           <div id="terminal-console" class="m-terminal">
-            <div class="log-line info">[SYS] ANG Automotive Remote ECU Tuning Engine v3.4 initialized.</div>
+            <div class="log-line info">[SYS] ANG Automotive Remote ECU Tuning Engine initialized.</div>
             <div class="log-line info">[SYS] Target DME: Bosch MEVD17.2.G (BMW S55 Engine Control Unit).</div>
             <div class="log-line info">[SYS] Ready for diagnostic and flash operations over ISO 13400.</div>
           </div>
@@ -402,10 +406,13 @@
       <div class="m-panel">
         <div class="m-panel-header">
           <div class="m-panel-title"><i class="fas fa-brain" style="color: var(--accent-cyan);"></i> AI Datalog Analyzer &amp; Knock Margin Inspector</div>
-          <label class="btn-m-action btn-sm" style="cursor: pointer;">
-            <i class="fas fa-upload"></i> Upload CSV / JSON Log
-            <input type="file" id="datalog-file-input" accept=".csv,.json" style="display: none;">
-          </label>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button id="btn-load-sample-datalog" class="btn-m-secondary btn-sm"><i class="fas fa-file-waveform"></i> Load S55 Sample Log</button>
+            <label class="btn-m-action btn-sm" style="cursor: pointer; margin: 0;">
+              <i class="fas fa-upload"></i> Upload CSV / JSON
+              <input type="file" id="datalog-file-input" accept=".csv,.json" style="display: none;">
+            </label>
+          </div>
         </div>
 
         <p style="font-size: 0.85rem; color: var(--text-secondary);">
@@ -415,7 +422,7 @@
         <div id="datalog-report-container" style="margin-top: 1.5rem;">
           <div style="text-align: center; padding: 2.5rem; color: var(--text-muted); border: 2px dashed var(--border-subtle); border-radius: 12px; background: var(--bg-carbon);">
             <i class="fas fa-cloud-arrow-up" style="font-size: 2.8rem; margin-bottom: 0.75rem; color: var(--bmw-m-blue);"></i>
-            <div style="font-size: 0.95rem; font-weight: 700; color: #fff;">Drag &amp; drop your engine datalog (.csv / .json) here, or click upload above</div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: #fff;">Click "Load S55 Sample Log" or upload your engine datalog (.csv / .json)</div>
           </div>
         </div>
       </div>

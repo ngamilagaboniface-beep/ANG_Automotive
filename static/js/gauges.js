@@ -35,8 +35,10 @@ class TelematicsGauges {
       if (!c) return;
       const rect = c.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
-      c.width = (rect.width || 260) * dpr;
-      c.height = (rect.height || 260) * dpr;
+      const w = (rect.width > 20) ? rect.width : 260;
+      const h = (rect.height > 20) ? rect.height : 260;
+      c.width = w * dpr;
+      c.height = h * dpr;
     };
     resize(this.rpmCanvas);
     resize(this.boostCanvas);
@@ -84,7 +86,6 @@ class TelematicsGauges {
   }
 
   _updateDynoMetrics(snap) {
-    // Calculate estimated flywheel horsepower & torque (Nm)
     const th = snap.pedal_pct || 0;
     const boostPsi = Math.max(0, snap.boost_actual_psi || 0);
     const rpm = snap.rpm || 750;
@@ -113,6 +114,8 @@ class TelematicsGauges {
     if (!this.rpmCtx || !this.rpmCanvas) return;
     const ctx = this.rpmCtx;
     const w = this.rpmCanvas.width, h = this.rpmCanvas.height;
+    if (w <= 0 || h <= 0) return;
+    const dpr = window.devicePixelRatio || 1;
     const cx = w / 2, cy = h / 2, r = Math.min(w, h) * 0.42;
 
     ctx.clearRect(0, 0, w, h);
@@ -123,7 +126,7 @@ class TelematicsGauges {
     ctx.fillStyle = '#0b0f16';
     ctx.fill();
     ctx.strokeStyle = '#21293a';
-    ctx.lineWidth = 4 * window.devicePixelRatio;
+    ctx.lineWidth = 4 * dpr;
     ctx.stroke();
 
     // Scale Track (0 to 8000 RPM)
@@ -134,14 +137,14 @@ class TelematicsGauges {
     ctx.beginPath();
     ctx.arc(cx, cy, r * 0.85, startAngle, startAngle + (endAngle - startAngle) * (6800 / 8000));
     ctx.strokeStyle = '#0066b1';
-    ctx.lineWidth = 6 * window.devicePixelRatio;
+    ctx.lineWidth = 6 * dpr;
     ctx.stroke();
 
     // Redline zone (6800 - 8000) - BMW M Red
     ctx.beginPath();
     ctx.arc(cx, cy, r * 0.85, startAngle + (endAngle - startAngle) * (6800 / 8000), endAngle);
     ctx.strokeStyle = '#e60000';
-    ctx.lineWidth = 8 * window.devicePixelRatio;
+    ctx.lineWidth = 8 * dpr;
     ctx.shadowColor = '#e60000';
     ctx.shadowBlur = 8;
     ctx.stroke();
@@ -155,21 +158,21 @@ class TelematicsGauges {
 
       const x1 = cx + Math.cos(angle) * (r * 0.85);
       const y1 = cy + Math.sin(angle) * (r * 0.85);
-      const x2 = cx + Math.cos(angle) * (r * 0.85 - tLen * window.devicePixelRatio);
-      const y2 = cy + Math.sin(angle) * (r * 0.85 - tLen * window.devicePixelRatio);
+      const x2 = cx + Math.cos(angle) * (r * 0.85 - tLen * dpr);
+      const y2 = cy + Math.sin(angle) * (r * 0.85 - tLen * dpr);
 
       ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
       ctx.strokeStyle = isRed ? '#e60000' : '#94a3b8';
-      ctx.lineWidth = 2 * window.devicePixelRatio;
+      ctx.lineWidth = 2 * dpr;
       ctx.stroke();
 
       if (rpm % 1000 === 0) {
         const tx = cx + Math.cos(angle) * (r * 0.65);
         const ty = cy + Math.sin(angle) * (r * 0.65);
         ctx.fillStyle = isRed ? '#ff4d4d' : '#f8fafc';
-        ctx.font = `bold ${11 * window.devicePixelRatio}px Inter, sans-serif`;
+        ctx.font = `bold ${11 * dpr}px Inter, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText((rpm / 1000).toString(), tx, ty);
@@ -178,7 +181,7 @@ class TelematicsGauges {
 
     // M Logo in Gauge Center
     ctx.fillStyle = '#64748b';
-    ctx.font = `italic 900 ${12 * window.devicePixelRatio}px Inter, sans-serif`;
+    ctx.font = `italic 900 ${12 * dpr}px Inter, sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillText('///M POWER', cx, cy - r * 0.28);
 
@@ -188,7 +191,7 @@ class TelematicsGauges {
     ctx.moveTo(cx, cy);
     ctx.lineTo(cx + Math.cos(needleAngle) * (r * 0.82), cy + Math.sin(needleAngle) * (r * 0.82));
     ctx.strokeStyle = '#e60000';
-    ctx.lineWidth = 3.5 * window.devicePixelRatio;
+    ctx.lineWidth = 3.5 * dpr;
     ctx.shadowColor = '#e60000';
     ctx.shadowBlur = 12;
     ctx.stroke();
@@ -196,16 +199,16 @@ class TelematicsGauges {
 
     // Center Cap
     ctx.beginPath();
-    ctx.arc(cx, cy, 8 * window.devicePixelRatio, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 8 * dpr, 0, Math.PI * 2);
     ctx.fillStyle = '#f8fafc';
     ctx.fill();
 
     // Digital Readout
     ctx.fillStyle = '#fff';
-    ctx.font = `bold ${20 * window.devicePixelRatio}px var(--font-mono), monospace`;
+    ctx.font = `bold ${20 * dpr}px monospace`;
     ctx.textAlign = 'center';
     ctx.fillText(Math.round(this.curRpm).toString(), cx, cy + r * 0.42);
-    ctx.font = `${9 * window.devicePixelRatio}px Inter, sans-serif`;
+    ctx.font = `${9 * dpr}px Inter, sans-serif`;
     ctx.fillStyle = '#94a3b8';
     ctx.fillText('ENGINE RPM', cx, cy + r * 0.58);
   }
@@ -214,6 +217,8 @@ class TelematicsGauges {
     if (!this.boostCtx || !this.boostCanvas) return;
     const ctx = this.boostCtx;
     const w = this.boostCanvas.width, h = this.boostCanvas.height;
+    if (w <= 0 || h <= 0) return;
+    const dpr = window.devicePixelRatio || 1;
     const cx = w / 2, cy = h / 2, r = Math.min(w, h) * 0.42;
 
     ctx.clearRect(0, 0, w, h);
@@ -224,7 +229,7 @@ class TelematicsGauges {
     ctx.fillStyle = '#0b0f16';
     ctx.fill();
     ctx.strokeStyle = '#21293a';
-    ctx.lineWidth = 4 * window.devicePixelRatio;
+    ctx.lineWidth = 4 * dpr;
     ctx.stroke();
 
     const startAngle = Math.PI * 0.75;
@@ -234,7 +239,7 @@ class TelematicsGauges {
     ctx.beginPath();
     ctx.arc(cx, cy, r * 0.85, startAngle, endAngle);
     ctx.strokeStyle = '#1a2232';
-    ctx.lineWidth = 6 * window.devicePixelRatio;
+    ctx.lineWidth = 6 * dpr;
     ctx.stroke();
 
     // Active Boost Glow Track
@@ -244,7 +249,7 @@ class TelematicsGauges {
     ctx.beginPath();
     ctx.arc(cx, cy, r * 0.85, startAngle, activeEnd);
     ctx.strokeStyle = this.curBoost > 22 ? '#e60000' : (this.curBoost > 15 ? '#ffd600' : '#00e5ff');
-    ctx.lineWidth = 6 * window.devicePixelRatio;
+    ctx.lineWidth = 6 * dpr;
     ctx.shadowColor = ctx.strokeStyle;
     ctx.shadowBlur = 10;
     ctx.stroke();
@@ -252,7 +257,7 @@ class TelematicsGauges {
 
     // M TwinPower Turbo Label
     ctx.fillStyle = '#00e5ff';
-    ctx.font = `italic 800 ${10 * window.devicePixelRatio}px Inter, sans-serif`;
+    ctx.font = `italic 800 ${10 * dpr}px Inter, sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillText('TWINPOWER TURBO', cx, cy - r * 0.28);
 
@@ -261,23 +266,23 @@ class TelematicsGauges {
     ctx.moveTo(cx, cy);
     ctx.lineTo(cx + Math.cos(activeEnd) * (r * 0.82), cy + Math.sin(activeEnd) * (r * 0.82));
     ctx.strokeStyle = '#00e5ff';
-    ctx.lineWidth = 3 * window.devicePixelRatio;
+    ctx.lineWidth = 3 * dpr;
     ctx.stroke();
 
     // Peak Hold Marker
     const peakNorm = Math.min(1.0, Math.max(0.0, (this.peakBoost + 15) / 50));
     const peakAngle = startAngle + (endAngle - startAngle) * peakNorm;
     ctx.beginPath();
-    ctx.arc(cx + Math.cos(peakAngle) * (r * 0.85), cy + Math.sin(peakAngle) * (r * 0.85), 4 * window.devicePixelRatio, 0, Math.PI * 2);
+    ctx.arc(cx + Math.cos(peakAngle) * (r * 0.85), cy + Math.sin(peakAngle) * (r * 0.85), 4 * dpr, 0, Math.PI * 2);
     ctx.fillStyle = '#ffd600';
     ctx.fill();
 
     // Digital Readout
     ctx.fillStyle = '#fff';
-    ctx.font = `bold ${21 * window.devicePixelRatio}px var(--font-mono), monospace`;
+    ctx.font = `bold ${21 * dpr}px monospace`;
     ctx.textAlign = 'center';
     ctx.fillText(`${this.curBoost >= 0 ? '+' : ''}${this.curBoost.toFixed(1)}`, cx, cy + r * 0.35);
-    ctx.font = `${9 * window.devicePixelRatio}px Inter, sans-serif`;
+    ctx.font = `${9 * dpr}px Inter, sans-serif`;
     ctx.fillStyle = '#94a3b8';
     ctx.fillText(`PSI BOOST (PEAK ${this.peakBoost.toFixed(1)})`, cx, cy + r * 0.55);
   }
@@ -286,6 +291,8 @@ class TelematicsGauges {
     if (!this.afrCtx || !this.afrCanvas) return;
     const ctx = this.afrCtx;
     const w = this.afrCanvas.width, h = this.afrCanvas.height;
+    if (w <= 0 || h <= 0) return;
+    const dpr = window.devicePixelRatio || 1;
     const cx = w / 2, cy = h / 2, r = Math.min(w, h) * 0.42;
 
     ctx.clearRect(0, 0, w, h);
@@ -296,7 +303,7 @@ class TelematicsGauges {
     ctx.fillStyle = '#0b0f16';
     ctx.fill();
     ctx.strokeStyle = '#21293a';
-    ctx.lineWidth = 4 * window.devicePixelRatio;
+    ctx.lineWidth = 4 * dpr;
     ctx.stroke();
 
     const startAngle = Math.PI * 0.75;
@@ -306,19 +313,19 @@ class TelematicsGauges {
     ctx.beginPath();
     ctx.arc(cx, cy, r * 0.85, startAngle, startAngle + (endAngle - startAngle) * 0.4);
     ctx.strokeStyle = '#0066b1';
-    ctx.lineWidth = 6 * window.devicePixelRatio;
+    ctx.lineWidth = 6 * dpr;
     ctx.stroke();
 
     ctx.beginPath();
     ctx.arc(cx, cy, r * 0.85, startAngle + (endAngle - startAngle) * 0.4, startAngle + (endAngle - startAngle) * 0.7);
     ctx.strokeStyle = '#00e676';
-    ctx.lineWidth = 6 * window.devicePixelRatio;
+    ctx.lineWidth = 6 * dpr;
     ctx.stroke();
 
     ctx.beginPath();
     ctx.arc(cx, cy, r * 0.85, startAngle + (endAngle - startAngle) * 0.7, endAngle);
     ctx.strokeStyle = '#e60000';
-    ctx.lineWidth = 6 * window.devicePixelRatio;
+    ctx.lineWidth = 6 * dpr;
     ctx.stroke();
 
     // Needle (10 to 19 AFR)
@@ -329,15 +336,15 @@ class TelematicsGauges {
     ctx.moveTo(cx, cy);
     ctx.lineTo(cx + Math.cos(needleAngle) * (r * 0.82), cy + Math.sin(needleAngle) * (r * 0.82));
     ctx.strokeStyle = '#00e676';
-    ctx.lineWidth = 3 * window.devicePixelRatio;
+    ctx.lineWidth = 3 * dpr;
     ctx.stroke();
 
     // Readout
     ctx.fillStyle = '#fff';
-    ctx.font = `bold ${20 * window.devicePixelRatio}px var(--font-mono), monospace`;
+    ctx.font = `bold ${20 * dpr}px monospace`;
     ctx.textAlign = 'center';
     ctx.fillText(this.curAfr.toFixed(2), cx, cy + r * 0.35);
-    ctx.font = `${9 * window.devicePixelRatio}px Inter, sans-serif`;
+    ctx.font = `${9 * dpr}px Inter, sans-serif`;
     ctx.fillStyle = '#94a3b8';
     ctx.fillText(`AIR-FUEL RATIO (λ ${this.curLambda.toFixed(3)})`, cx, cy + r * 0.55);
   }
@@ -346,36 +353,38 @@ class TelematicsGauges {
     if (!this.timingCtx || !this.timingCanvas) return;
     const ctx = this.timingCtx;
     const w = this.timingCanvas.width, h = this.timingCanvas.height;
+    if (w <= 0 || h <= 0) return;
+    const dpr = window.devicePixelRatio || 1;
 
     ctx.clearRect(0, 0, w, h);
 
     // Title
     ctx.fillStyle = '#94a3b8';
-    ctx.font = `bold ${10 * window.devicePixelRatio}px Inter, sans-serif`;
+    ctx.font = `bold ${10 * dpr}px Inter, sans-serif`;
     ctx.textAlign = 'left';
-    ctx.fillText('6-CYL TIMING ADVANCE (°BTDC) & KNOCK RETARD', 12 * window.devicePixelRatio, 18 * window.devicePixelRatio);
+    ctx.fillText('6-CYL TIMING ADVANCE (°BTDC) & KNOCK RETARD', 12 * dpr, 18 * dpr);
 
-    const barW = (w - 40 * window.devicePixelRatio) / 6;
+    const barW = (w - 40 * dpr) / 6;
     const baseY = h * 0.55;
 
     for (let c = 0; c < 6; c++) {
-      const x = 20 * window.devicePixelRatio + c * barW;
+      const x = 20 * dpr + c * barW;
       const tVal = this.curTiming[c] || 0;
       const kVal = this.curKnock[c] || 0;
 
       // Timing Advance Cyan Bar (Upper)
-      const tHeight = Math.min(60, Math.max(0, tVal * 2.5)) * window.devicePixelRatio;
+      const tHeight = Math.min(60, Math.max(0, tVal * 2.5)) * dpr;
       ctx.fillStyle = '#00e5ff';
       ctx.fillRect(x + 4, baseY - tHeight, barW - 8, tHeight);
 
       // Knock Retard Red Bar (Lower)
-      const kHeight = Math.min(45, kVal * 12) * window.devicePixelRatio;
+      const kHeight = Math.min(45, kVal * 12) * dpr;
       ctx.fillStyle = kVal > 3.0 ? '#e60000' : (kVal > 1.0 ? '#ffd600' : '#1e293b');
       ctx.fillRect(x + 4, baseY + 2, barW - 8, Math.max(4, kHeight));
 
       // Labels
       ctx.fillStyle = '#fff';
-      ctx.font = `${9 * window.devicePixelRatio}px var(--font-mono), monospace`;
+      ctx.font = `${9 * dpr}px monospace`;
       ctx.textAlign = 'center';
       ctx.fillText(`${tVal.toFixed(0)}°`, x + barW / 2, baseY - tHeight - 4);
 
@@ -385,7 +394,7 @@ class TelematicsGauges {
       }
 
       ctx.fillStyle = '#64748b';
-      ctx.fillText(`C${c+1}`, x + barW / 2, h - 8 * window.devicePixelRatio);
+      ctx.fillText(`C${c+1}`, x + barW / 2, h - 8 * dpr);
     }
   }
 }
